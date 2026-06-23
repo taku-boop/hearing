@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ヒアリング読取 | Cross Effect</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --accent: #e8441a;
+  --dark: #111;
+  --blue: #2563eb;
+  --gray: #9ca3af;
+  --bg: #f2f2f7;
+  --card: #fff;
+  --border: #e5e7eb;
+  --text: #111;
+  --sub: #6b7280;
+}
+
+body {
+  font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--dark);
+  color: #fff;
+  padding: 12px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left .brand { font-size: 10px; color: #888; letter-spacing: .1em; }
+.header-left h1 { font-size: 15px; font-weight: 700; margin-top: 1px; }
+.settings-btn {
+  background: none; border: 1px solid #444;
+  color: #bbb; padding: 5px 11px; border-radius: 6px;
+  font-size: 12px; cursor: pointer;
+}
+
+/* ── Main ── */
+.main { padding: 14px 14px 0; max-width: 480px; margin: 0 auto; }
+
+/* ── Card ── */
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sub);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 12px;
+}
+
+/* ── Upload ── */
+.upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 30px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  position: relative;
+  background: #fafafa;
+}
+.upload-area.has-file { border-color: var(--accent); }
+.upload-area input[type=file] {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+.upload-text { font-size: 15px; font-weight: 600; color: var(--dark); margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: var(--sub); }
+
+/* ── Preview ── */
+.preview-wrap { display: none; position: relative; }
+.preview-wrap img { width: 100%; border-radius: 8px; display: block; }
+.preview-clear {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,.65); color: #fff; border: none;
+  width: 30px; height: 30px; border-radius: 50%; font-size: 15px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: block; width: 100%; padding: 15px;
+  border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+  cursor: pointer; text-align: center; transition: opacity .15s, transform .1s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .38; pointer-events: none; }
+.btn-accent  { background: var(--accent); color: #fff; }
+.btn-dark    { background: var(--dark); color: #fff; }
+.btn-outline { background: #fff; color: var(--dark); border: 1.5px solid var(--border); }
+.btn-sm { padding: 10px; font-size: 13px; margin-top: 8px; }
+
+/* ── Status ── */
+.status {
+  display: none; padding: 12px 14px;
+  border-radius: 10px; font-size: 13px; margin-bottom: 12px;
+  align-items: center; gap: 10px;
+}
+.status.loading { display: flex; background: #eff6ff; color: #1d4ed8; }
+.status.success { display: flex; background: #f0fdf4; color: #166534; }
+.status.error   { display: flex; background: #fff5f5; color: #b91c1c; }
+.spinner {
+  width: 17px; height: 17px; flex-shrink: 0;
+  border: 2.5px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Rank badge ── */
+.rank-box {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: 10px; margin-bottom: 12px;
+}
+.rank-box.rank-a { background: #fff5f3; border: 1.5px solid var(--accent); }
+.rank-box.rank-b { background: #eff6ff; border: 1.5px solid var(--blue); }
+.rank-box.rank-c { background: #f9fafb; border: 1.5px solid var(--gray); }
+.rank-circle {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 900; color: #fff;
+}
+.rank-a .rank-circle { background: var(--accent); }
+.rank-b .rank-circle { background: var(--blue); }
+.rank-c .rank-circle { background: var(--gray); }
+.rank-info strong { display: block; font-size: 15px; margin-bottom: 2px; }
+.rank-info span { font-size: 12px; color: var(--sub); line-height: 1.4; }
+
+/* ── Result fields ── */
+.result-section { display: none; }
+.section-label {
+  font-size: 11px; font-weight: 700; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .07em;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.field { margin-bottom: 11px; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: block; font-size: 11px; color: var(--sub); font-weight: 600; margin-bottom: 4px; }
+.field input, .field textarea {
+  width: 100%; padding: 9px 11px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 14px; color: var(--text); font-family: inherit;
+  background: #fafafa; transition: border-color .15s;
+}
+.field input:focus, .field textarea:focus {
+  outline: none; border-color: var(--accent); background: #fff;
+}
+textarea.field-ta { resize: vertical; min-height: 62px; }
+
+/* ── Settings sheet ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 200;
+  align-items: flex-end;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: #fff; width: 100%;
+  border-radius: 18px 18px 0 0;
+  padding: 20px 18px 36px;
+  max-height: 85vh; overflow-y: auto;
+}
+.sheet-handle {
+  width: 36px; height: 4px; background: #ddd; border-radius: 99px;
+  margin: 0 auto 16px;
+}
+.sheet-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sheet-close { background: none; border: none; font-size: 22px; color: #aaa; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="brand">CROSS EFFECT</div>
+    <h1>ヒアリングシート読取</h1>
+  </div>
+  <button class="settings-btn" onclick="openSettings()">⚙ 設定</button>
+</div>
+
+<div class="main">
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">📷 シート写真をアップロード</div>
+    <div class="upload-area" id="uploadArea">
+      <input type="file" accept="image/*" capture="environment" id="fileInput" onchange="handleFile(this)">
+      <span class="upload-icon">📄</span>
+      <div class="upload-text">タップして撮影 / 選択</div>
+      <div class="upload-sub">名刺が貼付されたシートを1枚で撮影</div>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" src="" alt="プレビュー">
+      <button class="preview-clear" onclick="clearImage()">✕</button>
+    </div>
+  </div>
+
+  <!-- Analyze -->
+  <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled>🔍 AIで読み取る</button>
+
+  <!-- Status -->
+  <div style="height:10px;"></div>
+  <div class="status" id="status">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Result -->
+  <div class="result-section" id="resultSection">
+
+    <div id="rankBox"></div>
+
+    <!-- 名刺 -->
+    <div class="card">
+      <div class="section-label">名刺情報</div>
+      <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
+      <div class="field"><label>部署</label><input id="f_department" type="text"></div>
+      <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
+      <div class="field"><label>電話</label><input id="f_phone" type="tel"></div>
+      <div class="field"><label>メール</label><input id="f_email" type="email"></div>
+    </div>
+
+    <!-- シート基本 -->
+    <div class="card">
+      <div class="section-label">シート基本情報</div>
+      <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
+      <div class="field"><label>日付</label><input id="f_date" type="text"></div>
+      <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="card">
+      <div class="section-label">Q1 開発案件の有無</div>
+      <div class="field"><label>回答</label><input id="f_q1" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q1_other" type="text"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="card">
+      <div class="section-label">Q2 スケジュール</div>
+      <div class="field"><label>回答</label><input id="f_q2" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q2_other" type="text"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="card">
+      <div class="section-label">Q3 ロット規模</div>
+      <div class="field"><label>回答</label><input id="f_q3" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q3_other" type="text"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="card">
+      <div class="section-label">Q4 使用材質</div>
+      <div class="field"><label>回答</label><input id="f_q4" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q4_other" type="text"></div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="card">
+      <div class="section-label">Q5 現在の課題</div>
+      <div class="field"><label>回答</label><input id="f_q5" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q5_other" type="text"></div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="card">
+      <div class="section-label">Q6 デザイン・設計</div>
+      <div class="field"><label>回答</label><input id="f_q6" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q6_other" type="text"></div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="card">
+      <div class="section-label">Q7 CG動画・VR</div>
+      <div class="field"><label>回答</label><input id="f_q7" type="text"></div>
+      <div class="field"><label>その他</label><input id="f_q7_other" type="text"></div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="card">
+      <div class="section-label">Q8 工場見学</div>
+      <div class="field"><label>回答</label><input id="f_q8" type="text"></div>
+      <div class="field"><label>希望時期</label><input id="f_q8_time" type="text"></div>
+    </div>
+
+    <!-- 備考 -->
+    <div class="card">
+      <div class="section-label">備考・担当者メモ</div>
+      <div class="field"><textarea id="f_memo" class="field-ta"></textarea></div>
+    </div>
+
+    <button class="btn btn-dark" id="submitBtn" onclick="submitToSheets()">
+      📊 スプレッドシートに送信
+    </button>
+    <div style="height:8px;"></div>
+    <button class="btn btn-outline btn-sm" onclick="clearImage()">← 最初からやり直す</button>
+
+  </div><!-- /result -->
+
+</div><!-- /main -->
+
+<!-- Settings -->
+<div class="overlay" id="settingsOverlay" onclick="overlayClick(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">
+      設定
+      <button class="sheet-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="field">
+      <label>Anthropic API Key</label>
+      <input id="s_apiKey" type="password" placeholder="sk-ant-api03-...">
+    </div>
+    <div style="height:8px;"></div>
+    <div class="field">
+      <label>GAS Web App URL</label>
+      <input id="s_gasUrl" type="url" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div style="height:16px;"></div>
+    <button class="btn btn-accent" onclick="saveSettings()">保存する</button>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────
+let imageBase64 = null;
+let imageMime   = 'image/jpeg';
+
+// ── Settings ───────────────────────────────────
+function openSettings() {
+  document.getElementById('s_apiKey').value = localStorage.getItem('xef_key') || '';
+  document.getElementById('s_gasUrl').value = localStorage.getItem('xef_gas') || '';
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+function overlayClick(e) {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+}
+function saveSettings() {
+  localStorage.setItem('xef_key', document.getElementById('s_apiKey').value.trim());
+  localStorage.setItem('xef_gas', document.getElementById('s_gasUrl').value.trim());
+  closeSettings();
+  showStatus('success', '設定を保存しました');
+  setTimeout(hideStatus, 2000);
+}
+
+// ── File ───────────────────────────────────────
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  imageMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    imageBase64 = e.target.result.split(',')[1];
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('previewWrap').style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('resultSection').style.display = 'none';
+    hideStatus();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage() {
+  imageBase64 = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('resultSection').style.display = 'none';
+  hideStatus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Status ─────────────────────────────────────
+function showStatus(type, msg) {
+  const el = document.getElementById('status');
+  el.className = 'status ' + type;
+  document.getElementById('statusText').textContent = msg;
+  document.getElementById('spinner').style.display = type === 'loading' ? 'block' : 'none';
+}
+function hideStatus() {
+  document.getElementById('status').className = 'status';
+}
+
+// ── Rank ───────────────────────────────────────
+function calcRank(d) {
+  const q1 = d.q1 || '';
+  const q2 = d.q2 || '';
+  const q5 = d.q5 || '';
+  const q8 = d.q8 || '';
+  const hasProject = /ある|定期的|今後/.test(q1);
+  const urgent     = /大至急|3ヶ月/.test(q2);
+  const midterm    = /6ヶ月|1年|未定/.test(q2);
+  const hasIssue   = q5.length > 0 && !q5.includes('課題なし');
+  const wantsVisit = /ぜひ|見学したい/.test(q8);
+  if (hasProject && urgent) return 'A';
+  if ((hasProject && midterm) || hasIssue || wantsVisit) return 'B';
+  return 'C';
+}
+
+const RANK = {
+  A: { cls: 'rank-a', label: 'Aランク　今すぐ対応', desc: '直近案件あり・大手開発者で案件見込み' },
+  B: { cls: 'rank-b', label: 'Bランク　継続フォロー', desc: '中長期案件あり・相談・見学ニーズあり' },
+  C: { cls: 'rank-c', label: 'Cランク　情報提供のみ', desc: '案件なし・他業種・営業来訪' },
+};
+
+function renderRank(r) {
+  const info = RANK[r];
+  document.getElementById('rankBox').innerHTML = `
+    <div class="rank-box ${info.cls}">
+      <div class="rank-circle">${r}</div>
+      <div class="rank-info">
+        <strong>${info.label}</strong>
+        <span>${info.desc}</span>
+      </div>
+    </div>`;
+}
+
+// ── Analyze ────────────────────────────────────
+async function analyze() {
+  const key = localStorage.getItem('xef_key');
+  if (!key) { openSettings(); return; }
+  if (!imageBase64) return;
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('resultSection').style.display = 'none';
+  showStatus('loading', 'AIがシートを読み取り中...');
+
+  const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。右上に名刺が貼付されている場合があります。
+チェックボックス（☑ ✓ ○ 手書きチェックなど）が入っている項目を読み取ってください。複数チェックはカンマ区切りで列記。読み取れない場合は空文字。
+以下のJSON形式のみで返してください（説明文・コードブロック不要）:
+{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const json = await res.json();
+    const raw  = json.content?.find(b => b.type === 'text')?.text || '';
+    const clean = raw.replace(/```[a-z]*\n?/g, '').trim();
+    const data  = JSON.parse(clean);
+
+    fillFields(data);
+    const rank = calcRank(data);
+    renderRank(rank);
+    data._rank = rank;
+
+    document.getElementById('resultSection').style.display = 'block';
+    showStatus('success', '読み取り完了！内容を確認して送信してください');
+    document.getElementById('rankBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    showStatus('error', '読み取りエラー: ' + err.message);
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+// ── Fill / Collect ──────────────────────────────
+const FIELD_MAP = [
+  ['f_company','card_company'], ['f_department','card_department'], ['f_name','card_name'],
+  ['f_phone','card_phone'], ['f_email','card_email'],
+  ['f_exhibition','exhibition'], ['f_date','date'], ['f_staff','staff'],
+  ['f_q1','q1'], ['f_q1_other','q1_other'],
+  ['f_q2','q2'], ['f_q2_other','q2_other'],
+  ['f_q3','q3'], ['f_q3_other','q3_other'],
+  ['f_q4','q4'], ['f_q4_other','q4_other'],
+  ['f_q5','q5'], ['f_q5_other','q5_other'],
+  ['f_q6','q6'], ['f_q6_other','q6_other'],
+  ['f_q7','q7'], ['f_q7_other','q7_other'],
+  ['f_q8','q8'], ['f_q8_time','q8_visit_time'],
+  ['f_memo','memo'],
+];
+
+function fillFields(d) {
+  FIELD_MAP.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = d[key] || '';
+  });
+}
+
+function collectFields() {
+  const d = {};
+  FIELD_MAP.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    d[key] = el ? el.value : '';
+  });
+  return d;
+}
+
+// ── Submit ──────────────────────────────────────
+async function submitToSheets() {
+  const gasUrl = localStorage.getItem('xef_gas');
+  if (!gasUrl) { openSettings(); return; }
+
+  document.getElementById('submitBtn').disabled = true;
+  showStatus('loading', 'スプレッドシートに送信中...');
+
+  const payload = collectFields();
+  payload._rank = calcRank(payload);
+
+  try {
+    await fetch(gasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    showStatus('success', '✅ 送信完了！スプレッドシートを確認してください');
+    setTimeout(() => {
+      clearImage();
+      document.getElementById('resultSection').style.display = 'none';
+    }, 2500);
+  } catch (err) {
+    showStatus('error', '送信エラー: ' + err.message);
+  } finally {
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
