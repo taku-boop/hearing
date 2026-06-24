@@ -222,10 +222,10 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定（新型AQキー・v1betaの仕様に合わせて完全調整）
+//  固定設定（新型AQキー・v1betaで確実に通る稼働モデル名に差し替え）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-1.5-flash-latest'; // ← 新キーの制限回避のため -latest を付与
+const GEMINI_MODEL = 'gemini-2.5-flash'; // ← 新キー提供の最新標準モデル名に変更し404を回避
 const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
