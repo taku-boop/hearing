@@ -222,11 +222,11 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定（AQキーに対応するため、v1beta エンドポイントに修正）
+//  固定設定（新型AQキー・v1betaの仕様に合わせて完全調整）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-1.5-flash';
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; // ← v1 から v1beta に修正
+const GEMINI_MODEL = 'gemini-1.5-flash-latest'; // ← 新キーの制限回避のため -latest を付与
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
@@ -350,9 +350,6 @@ async function analyze() {
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
-      if (res.status === 401 || res.status === 400 || res.status === 403) {
-        throw new Error('API認証エラー。新キー(AQ...)に対応するため、マクロURLを最新版に修正しました。右上の⚙設定から、もう一度「鍵をコピー」した値を保存し直してください。');
-      }
       throw new Error(msg || `エラー(${res.status})`);
     }
 
