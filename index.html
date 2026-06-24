@@ -222,11 +222,11 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定
+//  固定設定（新型AQキー互換 ＆ 無料枠が最も安定する指定）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash'; 
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
+const GEMINI_MODEL = 'gemini-1.5-flash'; 
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
@@ -245,7 +245,6 @@ function onFile(input) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        // スマホのメモリ負荷を下げるため、最大サイズを少し小さめ（1200px）に調整
         const MAX = 1200; 
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
@@ -321,7 +320,7 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── AI読み取り ────────────────────────────────────
+// ── AI読み取り（混雑エラー自動ねじ伏せ・無限ループ付き） ──────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -330,7 +329,14 @@ async function analyze() {
   }
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('resultArea').style.display = 'none';
-  showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
+  
+  // 読み取りリトライ処理の呼び出し（最初の試行: attempt=1）
+  tryRequestWithRetry(GEMINI_KEY, 1);
+}
+
+// 混み合いエラー（429やHigh Demand）を検知すると自動で超高速再送するループ関数
+async function tryRequestWithRetry(apiKey, attempt) {
+  showSt('loading', attempt === 1 ? 'AIが読み取り中...（10〜20秒かかります）' : `⏳ サーバー混雑中... 自動で再送しています（${attempt}回目の挑戦）`);
 
   const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
 
@@ -346,7 +352,7 @@ async function analyze() {
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
     const res = await fetch(url, {
       method: 'POST',
@@ -359,13 +365,9 @@ async function analyze() {
       })
     });
 
+    // サーバー混雑などのエラーが出た場合は、即座にキャッチしてリトライへ飛ばす
     if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      const msg = e?.error?.message || '';
-      if (res.status === 429 || msg.includes('high demand')) {
-        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
-      }
-      throw new Error(msg || `エラー(${res.status})`);
+      throw new Error('High Demand');
     }
 
     const json  = await res.json();
@@ -383,15 +385,22 @@ async function analyze() {
     setTimeout(() => {
       document.getElementById('resultArea').style.display = 'block';
       showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
+      document.getElementById('analyzeBtn').disabled = false;
       setTimeout(() => {
         document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 200);
     }, 100);
 
   } catch (err) {
-    showSt('error', '読み取りエラー: ' + err.message);
-  } finally {
-    document.getElementById('analyzeBtn').disabled = false;
+    // 混雑エラーの場合は、1.5秒待ってから自動で次のリトライへループ（最大15回リトライして執念で通す）
+    if (attempt <= 15) {
+      setTimeout(() => {
+        tryRequestWithRetry(apiKey, attempt + 1);
+      }, 1500);
+    } else {
+      showSt('error', '読み取りエラー: サーバーの混雑が激しいため、時間を置いて再度「AIで読み取る」を押してください。');
+      document.getElementById('analyzeBtn').disabled = false;
+    }
   }
 }
 
