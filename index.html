@@ -227,6 +227,7 @@ function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 let imgB64 = null, imgMime = 'image/jpeg';
 let sheetSubmitCount = 0;
 
+// ── ファイル選択・プレビュー枠を確実に表示させるようにバグ修正 ──
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -251,11 +252,11 @@ function onFile(input) {
         imgB64 = dataUrl.split(',')[1];
         imgMime = 'image/jpeg';
         
+        // プレビュー枠を確実に画面に表示する
         document.getElementById('previewImg').src = dataUrl;
         document.getElementById('uploadZone').style.display  = 'none';
-        document.getElementById('previewWrap').style.display = 'block';
+        document.getElementById('previewWrap').style.display = 'block'; // 確実に表示
         document.getElementById('analyzeBtn').disabled = false;
-        document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
         showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて撮影してください。');
@@ -298,7 +299,7 @@ function calcRank(d) {
   return 'C';
 }
 
-// ── 【待ち時間ゼロ化】ボタンを押した瞬間に画面を初期化する ──────────────────
+// ── ボタンを押した瞬間に画面を初期化する（裏側処理型） ──────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -311,7 +312,7 @@ async function analyze() {
   const targetB64 = imgB64;
   const targetMime = imgMime;
 
-  // ボタンを押した瞬間に、待たせずに画面を即リセット（すぐ次の撮影ができる状態へ）
+  // ボタンを押した瞬間に、待たせずにメイン画面を即リセット
   imgB64 = null;
   document.getElementById('fileInput').value = '';
   document.getElementById('uploadZone').style.display  = 'block';
@@ -320,11 +321,10 @@ async function analyze() {
   
   showSt('loading', `⏳ ${currentCount}枚目を裏側で送信中...（続けて次の撮影をして大丈夫です）`);
 
-  // 裏側（バックグラウンド）で処理を開始。混み合いエラー時は自動で何度もリトライする。
+  // 裏側（バックグラウンド）で処理を開始。混み合いエラー時は自動リトライ。
   runBackgroundProcessWithRetry(currentCount, targetB64, targetMime, GEMINI_KEY, 1);
 }
 
-// ── 【混み合いねじ伏せ機能】自動リトライを繰り返すループ関数 ──────────────────
 async function runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, attempt) {
   const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
 必ずJSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）
@@ -343,15 +343,13 @@ async function runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, a
       })
     });
 
-    // もし混み合いエラー(429など)が出た場合、キャッチブロックに飛ばして即座にリトライさせる
     if (!res.ok) {
       throw new Error('High Demand');
     }
 
     const json  = await res.json();
     const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = raw.replace(/```[a-z]*\n?|
-```/g, '').trim();
+    const clean = raw.replace(/```[a-z]*\n?|```/g, '').trim();
 
     const data = JSON.parse(clean);
     data._rank   = calcRank(data);
@@ -371,14 +369,12 @@ async function runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, a
     }, 4000);
 
   } catch (err) {
-    // 混み合いエラーを検知したら、画面を止めずに2秒待って裏で自動で送り直す（最大5回まで挑戦）
     if (attempt <= 5) {
       showSt('loading', `⏳ サーバー混雑中... ${count}枚目を自動で再送しています（そのまま次を撮影してください）`);
       setTimeout(() => {
         runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, attempt + 1);
       }, 2000);
     } else {
-      // 5回やってもダメだった時だけエラー表示を残す
       showSt('error', `❌ ${count}枚目は混雑が酷いため送信失敗しました。お手数ですが時間を置いて撮り直してください。`);
     }
   }
