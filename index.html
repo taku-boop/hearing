@@ -222,18 +222,18 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定
+//  固定設定（混雑を回避するため、安定性の高い 1.5-flash に固定）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash'; 
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
+const GEMINI_MODEL = 'gemini-1.5-flash'; 
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models'; // 新キーでも通るエンドポイントに修正
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択・エラー回避用マイルド圧縮 ──────────────────────
+// ── 反応しない不具合対策済みの画像読み込み ───────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -245,7 +245,7 @@ function onFile(input) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        // スマホのメモリ負荷を下げるため、最大サイズを少し小さめ（1200px）に調整
+        // メモリクラッシュを防ぐマイルドな圧縮
         const MAX = 1200; 
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
@@ -266,7 +266,7 @@ function onFile(input) {
         document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
-        showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて撮影してください。');
+        showSt('error', '画像処理に失敗しました。SafariやChromeなどの標準ブラウザで開き直してください。');
       }
     };
     img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。'); };
@@ -363,7 +363,7 @@ async function analyze() {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
       if (res.status === 429 || msg.includes('high demand')) {
-        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
+        throw new Error('無料枠のサーバーが混み合っています。完全にエラーを回避するには、Google AI Studioの設定で「Pay-as-you-go（有料従量プラン）」に切り替えることをお勧めします（料金は月数十円程度です）。');
       }
       throw new Error(msg || `エラー(${res.status})`);
     }
