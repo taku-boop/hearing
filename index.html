@@ -144,12 +144,15 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
   <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
   <div id="resultArea" style="display:none;">
+
     <div id="rankDisplay"></div>
+
     <div class="edit-banner">
       ✏️ <strong>内容を修正できます</strong><br>
       各項目の入力欄をタップするとキーボードが表示されます。<br>
       AIの読み違いを直してから送信してください。
     </div>
+
     <div class="card">
       <div class="sec-title">📇 名刺情報</div>
       <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
@@ -158,12 +161,14 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
       <div class="field"><label>電話番号</label><input id="f_phone" type="text" inputmode="tel"></div>
       <div class="field"><label>メールアドレス</label><input id="f_email" type="text" inputmode="email"></div>
     </div>
+
     <div class="card">
       <div class="sec-title">📋 基本情報</div>
       <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
       <div class="field"><label>日付</label><input id="f_date" type="text"></div>
       <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
     </div>
+
     <div class="card">
       <div class="sec-title">Q1 開発・試作の案件</div>
       <div class="field"><label>チェック内容</label><input id="f_q1" type="text"></div>
@@ -208,8 +213,10 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
       <div class="sec-title">📝 備考・担当者メモ（手書き）</div>
       <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容が入ります"></textarea></div>
     </div>
+
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
     <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
+
   </div>
 </div>
 
@@ -218,16 +225,15 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 //  固定設定
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-1.5-flash'; 
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models'; 
+const GEMINI_MODEL = 'gemini-2.5-flash'; 
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
 
 let imgB64 = null, imgMime = 'image/jpeg';
-let sheetSubmitCount = 0;
 
-// ── ファイル選択・プレビュー枠を確実に表示させるようにバグ修正 ──
+// ── ファイル選択・エラー回避用マイルド圧縮 ──────────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -239,6 +245,7 @@ function onFile(input) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
+        // スマホのメモリ負荷を下げるため、最大サイズを少し小さめ（1200px）に調整
         const MAX = 1200; 
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
@@ -252,11 +259,11 @@ function onFile(input) {
         imgB64 = dataUrl.split(',')[1];
         imgMime = 'image/jpeg';
         
-        // プレビュー枠を確実に画面に表示する
         document.getElementById('previewImg').src = dataUrl;
         document.getElementById('uploadZone').style.display  = 'none';
-        document.getElementById('previewWrap').style.display = 'block'; // 確実に表示
+        document.getElementById('previewWrap').style.display = 'block';
         document.getElementById('analyzeBtn').disabled = false;
+        document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
         showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて撮影してください。');
@@ -279,6 +286,7 @@ function doReset() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── ステータス ────────────────────────────────────
 function showSt(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -287,6 +295,7 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
+// ── ランク判定・表示 ──────────────────────────────
 function calcRank(d) {
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
@@ -298,86 +307,125 @@ function calcRank(d) {
   if ((hasPrj && mid)||issue||visit) return 'B';
   return 'C';
 }
+const RINFO = {
+  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+};
+function renderRank(r) {
+  const i = RINFO[r];
+  document.getElementById('rankDisplay').innerHTML = `
+    <div class="rank-box ${i.cls}">
+      <div class="rank-circle">${r}</div>
+      <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
+    </div>`;
+}
 
-// ── ボタンを押した瞬間に画面を初期化する（裏側処理型） ──────────────────
+// ── AI読み取り ────────────────────────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
     showSt('error', 'APIキーが未設定です。右上の⚙設定からキーを入力してください。');
     return;
   }
-
-  sheetSubmitCount++;
-  const currentCount = sheetSubmitCount;
-  const targetB64 = imgB64;
-  const targetMime = imgMime;
-
-  // ボタンを押した瞬間に、待たせずにメイン画面を即リセット
-  imgB64 = null;
-  document.getElementById('fileInput').value = '';
-  document.getElementById('uploadZone').style.display  = 'block';
-  document.getElementById('previewWrap').style.display = 'none';
   document.getElementById('analyzeBtn').disabled = true;
-  
-  showSt('loading', `⏳ ${currentCount}枚目を裏側で送信中...（続けて次の撮影をして大丈夫です）`);
+  document.getElementById('resultArea').style.display = 'none';
+  showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-  // 裏側（バックグラウンド）で処理を開始。混み合いエラー時は自動リトライ。
-  runBackgroundProcessWithRetry(currentCount, targetB64, targetMime, GEMINI_KEY, 1);
-}
-
-async function runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, attempt) {
   const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-必ずJSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）
+
+【必ず守るルール】
+1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること
+2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること
+3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること
+4. 日本語の手書き文字を丁寧に読み取ること
+5. 複数選択はカンマ区切りで列記すること
+6. 読み取れない項目は空文字にすること
+7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）
+
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [
-          { inline_data: { mime_type: mimeData, data: b64Data } },
+          { inline_data: { mime_type: imgMime, data: imgB64 } },
           { text: prompt }
         ]}]
       })
     });
 
     if (!res.ok) {
-      throw new Error('High Demand');
+      const e = await res.json().catch(() => ({}));
+      const msg = e?.error?.message || '';
+      if (res.status === 429 || msg.includes('high demand')) {
+        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
+      }
+      throw new Error(msg || `エラー(${res.status})`);
     }
 
     const json  = await res.json();
     const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```[a-z]*\n?|```/g, '').trim();
 
-    const data = JSON.parse(clean);
-    data._rank   = calcRank(data);
-    data._sentAt = new Date().toLocaleString('ja-JP');
+    let data;
+    try { data = JSON.parse(clean); }
+    catch { throw new Error('AIの返答を解析できませんでした。もう一度試してください。'); }
 
-    // スプレッドシートへ送信
-    await fetch(GAS_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data),
-    });
+    fill(data);
+    const rank = calcRank(data);
+    renderRank(rank);
 
-    // 成功通知
-    showSt('success', `✅ ${count}枚目の自動送信が完了しました！`);
     setTimeout(() => {
-      if(!document.getElementById('previewImg').src.includes('data:image')) hideSt();
-    }, 4000);
+      document.getElementById('resultArea').style.display = 'block';
+      showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
+      setTimeout(() => {
+        document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }, 100);
 
   } catch (err) {
-    if (attempt <= 5) {
-      showSt('loading', `⏳ サーバー混雑中... ${count}枚目を自動で再送しています（そのまま次を撮影してください）`);
-      setTimeout(() => {
-        runBackgroundProcessWithRetry(count, b64Data, mimeData, apiKey, attempt + 1);
-      }, 2000);
-    } else {
-      showSt('error', `❌ ${count}枚目は混雑が酷いため送信失敗しました。お手数ですが時間を置いて撮り直してください。`);
-    }
+    showSt('error', '読み取りエラー: ' + err.message);
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
   }
+}
+
+// ── フィールド入出力 ──────────────────────────────
+const FMAP = [
+  ['f_company','card_company'],['f_department','card_department'],
+  ['f_name','card_name'],['f_phone','card_phone'],['f_email','card_email'],
+  ['f_exhibition','exhibition'],['f_date','date'],['f_staff','staff'],
+  ['f_q1','q1'],['f_q1_other','q1_other'],
+  ['f_q2','q2'],['f_q2_other','q2_other'],
+  ['f_q3','q3'],['f_q3_other','q3_other'],
+  ['f_q4','q4'],['f_q4_other','q4_other'],
+  ['f_q5','q5'],['f_q5_other','q5_other'],
+  ['f_q6','q6'],['f_q6_other','q6_other'],
+  ['f_q7','q7'],['f_q7_other','q7_other'],
+  ['f_q8','q8'],['f_q8_time','q8_visit_time'],
+  ['f_memo','memo'],
+];
+function fill(d) {
+  FMAP.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = d[key] || '';
+    el.removeAttribute('readonly');
+    el.removeAttribute('disabled');
+  });
+}
+function collect() {
+  const d = {};
+  FMAP.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    d[key] = el ? el.value.trim() : '';
+  });
+  return d;
 }
 
 // ── 設定画面 ──────────────────────────────────────
@@ -398,9 +446,26 @@ function saveCfg() {
   setTimeout(hideSt, 2000);
 }
 
-function fill(d) {}
-function collect() { return {}; }
-async function submitData() {}
+// ── スプレッドシート送信 ──────────────────────────
+async function submitData() {
+  document.getElementById('submitBtn').disabled = true;
+  showSt('loading', 'スプレッドシートに送信中...');
+  const payload   = collect();
+  payload._rank   = calcRank(payload);
+  payload._sentAt = new Date().toLocaleString('ja-JP');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
+    setTimeout(doReset, 4000);
+  } catch (err) {
+    showSt('error', '送信エラー: ' + err.message);
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
 </script>
 
 <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
