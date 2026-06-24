@@ -28,7 +28,6 @@ body {
   font-size: 16px;
 }
 
-/* ── ヘッダー ── */
 .app-header {
   background: var(--dark); color: #fff;
   padding: 14px 16px;
@@ -43,10 +42,8 @@ body {
   padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
 }
 
-/* ── メイン ── */
 .main { padding: 16px; max-width: 500px; margin: 0 auto; }
 
-/* ── カード ── */
 .card {
   background: var(--card); border-radius: 14px;
   padding: 18px; margin-bottom: 14px;
@@ -57,12 +54,11 @@ body {
   text-transform: uppercase; letter-spacing: .07em; margin-bottom: 14px;
 }
 
-/* ── アップロード ── */
+/* アップロード */
 .upload-zone {
   border: 2px dashed #d1d5db; border-radius: 10px;
   padding: 36px 20px; text-align: center;
   background: #fafafa; position: relative; cursor: pointer;
-  transition: border-color .2s;
 }
 .upload-zone:active { border-color: var(--accent); background: #fff5f3; }
 .upload-zone input {
@@ -72,7 +68,6 @@ body {
 .upload-main { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
 .upload-sub  { font-size: 13px; color: var(--sub); }
 
-/* ── プレビュー ── */
 .preview-wrap { display: none; position: relative; }
 .preview-wrap img { width: 100%; border-radius: 10px; display: block; }
 .preview-clear {
@@ -82,7 +77,6 @@ body {
   cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 
-/* ── ボタン ── */
 .btn {
   display: block; width: 100%; padding: 16px;
   border: none; border-radius: 12px;
@@ -91,7 +85,7 @@ body {
   transition: opacity .15s, transform .1s;
   -webkit-appearance: none;
 }
-.btn:active  { transform: scale(.97); }
+.btn:active   { transform: scale(.97); }
 .btn:disabled { opacity: .35; pointer-events: none; }
 .btn-accent  { background: var(--accent); color: #fff; }
 .btn-dark    { background: var(--dark);   color: #fff; }
@@ -101,7 +95,6 @@ body {
   font-size: 14px; padding: 12px;
 }
 
-/* ── ステータス ── */
 .status {
   display: none; padding: 14px 16px; border-radius: 12px;
   font-size: 14px; margin-bottom: 14px;
@@ -117,7 +110,6 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── ランク ── */
 .rank-box {
   display: flex; align-items: center; gap: 14px;
   padding: 16px; border-radius: 12px; margin-bottom: 14px;
@@ -136,7 +128,6 @@ body {
 .rank-info strong { display: block; font-size: 16px; font-weight: 700; margin-bottom: 2px; }
 .rank-info span   { font-size: 12px; color: var(--sub); line-height: 1.4; }
 
-/* ── 結果フォーム ── */
 .result-wrap { display: none; }
 .sec-title {
   font-size: 11px; font-weight: 700; color: var(--sub);
@@ -145,48 +136,30 @@ body {
 }
 .field { margin-bottom: 14px; }
 .field:last-child { margin-bottom: 0; }
-.field label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--sub); margin-bottom: 6px;
-}
-
-/* ── 入力欄（編集しやすくする） ── */
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 6px; }
 .field input,
 .field textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  font-size: 15px;
-  color: var(--text);
-  background: #ffffff;          /* 白背景で編集できると明確に */
-  font-family: inherit;
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: text;
+  width: 100%; padding: 12px 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-size: 15px; color: var(--text); background: #fff;
+  font-family: inherit; -webkit-appearance: none; appearance: none;
+  cursor: text; touch-action: manipulation;
   transition: border-color .2s, box-shadow .2s;
-  /* タップ可能を明確にする */
-  touch-action: manipulation;
 }
 .field input:focus,
 .field textarea:focus {
-  outline: none;
-  border-color: var(--accent);
+  outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(232,68,26,.15);
 }
-.field textarea {
-  resize: vertical; min-height: 80px; line-height: 1.5;
-}
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
-/* 編集ヒント */
 .edit-hint {
   background: #fffbeb; border: 1px solid #fde68a;
   border-radius: 10px; padding: 12px 14px;
-  font-size: 13px; color: #92400e;
-  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #92400e; margin-bottom: 14px;
 }
 
-/* ── 設定モーダル ── */
+/* 設定モーダル */
 .overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,.5); z-index: 200; align-items: flex-end;
@@ -194,18 +167,19 @@ body {
 .overlay.open { display: flex; }
 .bottom-sheet {
   background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-  padding: 20px 20px 40px; max-height: 80vh; overflow-y: auto;
+  padding: 20px 20px 40px; max-height: 85vh; overflow-y: auto;
 }
 .bs-handle { width: 36px; height: 4px; background: #ddd; border-radius: 99px; margin: 0 auto 18px; }
-.bs-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
-.bs-close { background: none; border: none; font-size: 22px; color: #aaa; cursor: pointer; }
+.bs-title  { font-size: 17px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.bs-close  { background: none; border: none; font-size: 22px; color: #aaa; cursor: pointer; }
+.bs-note   { font-size: 12px; color: var(--sub); margin-bottom: 18px; line-height: 1.6; }
 
-/* ── APIキー状態表示 ── */
-.key-status {
-  font-size: 12px; padding: 6px 10px; border-radius: 6px; margin-top: 6px; display: inline-block;
+.key-badge {
+  display: inline-block; font-size: 12px; padding: 4px 10px;
+  border-radius: 6px; margin-top: 6px;
 }
-.key-ok  { background: #f0fdf4; color: #166534; }
-.key-ng  { background: #fff5f5; color: #b91c1c; }
+.key-ok { background: #f0fdf4; color: #166534; }
+.key-ng { background: #fff5f5; color: #b91c1c; }
 </style>
 </head>
 <body>
@@ -227,7 +201,7 @@ body {
       <input type="file" accept="image/*" capture="environment" id="fileInput" onchange="onFile(this)">
       <span class="upload-icon">📄</span>
       <div class="upload-main">タップして撮影 / 選択</div>
-      <div class="upload-sub">名刺が貼付されたシートを1枚で</div>
+      <div class="upload-sub">名刺が貼付されたシートを1枚で撮影</div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" src="" alt="">
@@ -235,10 +209,9 @@ body {
     </div>
   </div>
 
-  <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled>🔍 AIで読み取る</button>
+  <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled>🔍 AIで読み取る（無料）</button>
   <div style="height:12px;"></div>
 
-  <!-- ステータス -->
   <div class="status" id="status">
     <div class="spinner" id="spinner"></div>
     <span id="statusMsg"></span>
@@ -248,20 +221,17 @@ body {
   <div class="result-wrap" id="resultWrap">
 
     <div id="rankDisplay"></div>
+    <div class="edit-hint">✏️ 各項目をタップして修正できます</div>
 
-    <div class="edit-hint">✏️ 各項目をタップして内容を修正できます</div>
-
-    <!-- 名刺情報 -->
     <div class="card">
       <div class="sec-title">名刺情報（自動読取）</div>
-      <div class="field"><label>会社名</label><input id="f_company" type="text" placeholder="例：株式会社〇〇"></div>
-      <div class="field"><label>部署</label><input id="f_department" type="text" placeholder="例：開発部"></div>
-      <div class="field"><label>氏名</label><input id="f_name" type="text" placeholder="例：山田 太郎"></div>
-      <div class="field"><label>電話番号</label><input id="f_phone" type="tel" placeholder="例：06-1234-5678"></div>
-      <div class="field"><label>メールアドレス</label><input id="f_email" type="email" placeholder="例：taro@example.com"></div>
+      <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
+      <div class="field"><label>部署</label><input id="f_department" type="text"></div>
+      <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
+      <div class="field"><label>電話番号</label><input id="f_phone" type="tel"></div>
+      <div class="field"><label>メールアドレス</label><input id="f_email" type="email"></div>
     </div>
 
-    <!-- 基本情報 -->
     <div class="card">
       <div class="sec-title">シート基本情報</div>
       <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
@@ -269,7 +239,6 @@ body {
       <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
     </div>
 
-    <!-- Q1〜Q8 -->
     <div class="card">
       <div class="sec-title">Q1 開発・試作の案件</div>
       <div class="field"><label>回答</label><input id="f_q1" type="text"></div>
@@ -315,28 +284,29 @@ body {
       <div class="field"><textarea id="f_memo" placeholder="自由記述"></textarea></div>
     </div>
 
-    <button class="btn btn-dark" id="submitBtn" onclick="submit()">📊 スプレッドシートに送信</button>
+    <button class="btn btn-dark" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
     <button class="btn btn-outline" onclick="reset()">← 最初からやり直す</button>
 
   </div>
-
 </div>
 
-<!-- 設定モーダル -->
+<!-- 設定 -->
 <div class="overlay" id="cfgOverlay" onclick="bgClose(event)">
   <div class="bottom-sheet">
     <div class="bs-handle"></div>
-    <div class="bs-title">設定 <button class="bs-close" onclick="closeCfg()">✕</button></div>
-
-    <div class="field">
-      <label>Anthropic API Key</label>
-      <input id="s_key" type="password" placeholder="sk-ant-api03-...">
-      <span class="key-status" id="keyStatus"></span>
+    <div class="bs-title">
+      設定
+      <button class="bs-close" onclick="closeCfg()">✕</button>
     </div>
-    <div style="height:12px;"></div>
+    <div class="bs-note">
+      Google AI Studio でAPIキーを無料取得できます。<br>
+      👉 <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;">aistudio.google.com/apikey</a><br>
+      Googleアカウントでログインして「APIキーを作成」を押すだけです。
+    </div>
     <div class="field">
-      <label>GAS Web App URL（変更不要）</label>
-      <input id="s_gas" type="url" placeholder="https://script.google.com/...">
+      <label>Gemini API Key（無料）</label>
+      <input id="s_key" type="password" placeholder="AIza...">
+      <span class="key-badge" id="keyBadge"></span>
     </div>
     <div style="height:20px;"></div>
     <button class="btn btn-accent" onclick="saveCfg()">保存する</button>
@@ -344,43 +314,33 @@ body {
 </div>
 
 <script>
-// ════════════════════════════════════════════════════
-//  設定値（GAS URLはここに固定）
-// ════════════════════════════════════════════════════
-const GAS_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+// ── 固定設定 ────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 
-// ════════════════════════════════════════════════════
-//  状態
-// ════════════════════════════════════════════════════
-let imgB64  = null;
-let imgMime = 'image/jpeg';
+// ── 状態 ────────────────────────────────────────────
+let imgB64 = null, imgMime = 'image/jpeg';
 
-// ════════════════════════════════════════════════════
-//  設定
-// ════════════════════════════════════════════════════
+// ── 設定 ────────────────────────────────────────────
 function openCfg() {
-  const k = localStorage.getItem('xef_key') || '';
+  const k = localStorage.getItem('xef_gemini') || '';
   document.getElementById('s_key').value = k;
-  document.getElementById('s_gas').value = localStorage.getItem('xef_gas') || GAS_URL_DEFAULT;
-  document.getElementById('keyStatus').textContent = k ? '✅ APIキー設定済み' : '❌ 未設定';
-  document.getElementById('keyStatus').className   = 'key-status ' + (k ? 'key-ok' : 'key-ng');
+  document.getElementById('keyBadge').textContent = k ? '✅ 設定済み' : '❌ 未設定';
+  document.getElementById('keyBadge').className   = 'key-badge ' + (k ? 'key-ok' : 'key-ng');
   document.getElementById('cfgOverlay').classList.add('open');
 }
 function closeCfg() { document.getElementById('cfgOverlay').classList.remove('open'); }
 function bgClose(e) { if (e.target === document.getElementById('cfgOverlay')) closeCfg(); }
 function saveCfg() {
   const k = document.getElementById('s_key').value.trim();
-  const g = document.getElementById('s_gas').value.trim() || GAS_URL_DEFAULT;
-  localStorage.setItem('xef_key', k);
-  localStorage.setItem('xef_gas', g);
+  if (!k) { alert('APIキーを入力してください'); return; }
+  localStorage.setItem('xef_gemini', k);
   closeCfg();
-  showStatus('success', '設定を保存しました');
+  showStatus('success', '✅ APIキーを保存しました');
   setTimeout(hideStatus, 2000);
 }
 
-// ════════════════════════════════════════════════════
-//  ファイル選択
-// ════════════════════════════════════════════════════
+// ── ファイル ─────────────────────────────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -392,7 +352,7 @@ function onFile(input) {
     document.getElementById('uploadZone').style.display  = 'none';
     document.getElementById('previewWrap').style.display = 'block';
     document.getElementById('analyzeBtn').disabled = false;
-    document.getElementById('resultWrap').style.display = 'none';
+    document.getElementById('resultWrap').style.display  = 'none';
     hideStatus();
   };
   r.readAsDataURL(file);
@@ -404,14 +364,12 @@ function reset() {
   document.getElementById('uploadZone').style.display  = 'block';
   document.getElementById('previewWrap').style.display = 'none';
   document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('resultWrap').style.display  = 'none';
   hideStatus();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ════════════════════════════════════════════════════
-//  ステータス
-// ════════════════════════════════════════════════════
+// ── ステータス ───────────────────────────────────────
 function showStatus(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -420,28 +378,26 @@ function showStatus(type, msg) {
 }
 function hideStatus() { document.getElementById('status').className = 'status'; }
 
-// ════════════════════════════════════════════════════
-//  ランク
-// ════════════════════════════════════════════════════
+// ── ランク ───────────────────────────────────────────
 function calcRank(d) {
-  const q1 = d.q1 || '', q2 = d.q2 || '', q5 = d.q5 || '', q8 = d.q8 || '';
-  const hasPrj   = /ある|定期的|今後/.test(q1);
-  const urgent   = /大至急|3ヶ月/.test(q2);
-  const midterm  = /6ヶ月|1年|未定/.test(q2);
-  const hasIssue = q5.length > 0 && !q5.includes('課題なし');
-  const visit    = /ぜひ|見学したい/.test(q8);
-  if (hasPrj && urgent)                        return 'A';
-  if ((hasPrj && midterm) || hasIssue || visit) return 'B';
+  const q1 = d.q1||'', q2 = d.q2||'', q5 = d.q5||'', q8 = d.q8||'';
+  const hasPrj  = /ある|定期的|今後/.test(q1);
+  const urgent  = /大至急|3ヶ月/.test(q2);
+  const mid     = /6ヶ月|1年|未定/.test(q2);
+  const issue   = q5.length > 0 && !q5.includes('課題なし');
+  const visit   = /ぜひ|見学したい/.test(q8);
+  if (hasPrj && urgent)              return 'A';
+  if ((hasPrj && mid)||issue||visit) return 'B';
   return 'C';
 }
 
-const RANK_INFO = {
-  A: { cls: 'ra', label: 'Aランク　今すぐ対応', desc: '直近案件あり・大手開発者で案件見込み' },
-  B: { cls: 'rb', label: 'Bランク　継続フォロー', desc: '中長期案件・相談・見学ニーズあり' },
-  C: { cls: 'rc', label: 'Cランク　情報提供のみ', desc: '案件なし・他業種・営業来訪' },
+const RINFO = {
+  A: { cls:'ra', label:'Aランク　今すぐ対応',    desc:'直近案件あり・大手開発者で案件見込み' },
+  B: { cls:'rb', label:'Bランク　継続フォロー',  desc:'中長期案件・相談・見学ニーズあり' },
+  C: { cls:'rc', label:'Cランク　情報提供のみ',  desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
-  const i = RANK_INFO[r];
+  const i = RINFO[r];
   document.getElementById('rankDisplay').innerHTML = `
     <div class="rank-box ${i.cls}">
       <div class="rank-circle">${r}</div>
@@ -449,53 +405,46 @@ function renderRank(r) {
     </div>`;
 }
 
-// ════════════════════════════════════════════════════
-//  AI 読み取り
-// ════════════════════════════════════════════════════
+// ── AI 読み取り（Gemini） ────────────────────────────
 async function analyze() {
-  const key = localStorage.getItem('xef_key');
+  const key = localStorage.getItem('xef_gemini');
   if (!key) { openCfg(); return; }
   if (!imgB64) return;
 
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('resultWrap').style.display = 'none';
-  showStatus('loading', 'AIがシートを読み取り中...（10〜20秒かかります）');
+  showStatus('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-  const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-右上に名刺が貼付されている場合があります。
-チェックボックス（☑ ✓ ○ 手書きチェックなど）が入っている項目を読み取ってください。
-複数チェックはカンマ区切り。読み取れない項目は空文字にしてください。
-以下のJSONのみを返してください（コードブロック・説明文は不要）:
+  const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。右上に名刺が貼付されている場合があります。チェックボックス（☑ ✓ ○ 手書きチェックなど）が入っている項目を読み取ってください。複数チェックはカンマ区切り。読み取れない項目は空文字。以下のJSONのみを返してください（コードブロック・説明文は不要）:
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: imgMime, data: imgB64 } },
-            { type: 'text', text: prompt }
-          ]
-        }]
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: imgMime, data: imgB64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: { temperature: 0 }
+        })
+      }
+    );
 
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
-      throw new Error(e.error?.message || `APIエラー (${res.status})`);
+      const msg = e.error?.message || `エラー (${res.status})`;
+      if (res.status === 400) throw new Error('APIキーが正しくありません。設定を確認してください。');
+      throw new Error(msg);
     }
 
     const json = await res.json();
-    const raw  = json.content?.find(b => b.type === 'text')?.text || '';
+    const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const data = JSON.parse(raw.replace(/```[a-z]*\n?|```/g, '').trim());
 
     fill(data);
@@ -508,74 +457,53 @@ async function analyze() {
 
   } catch(err) {
     showStatus('error', '読み取りエラー: ' + err.message);
-    console.error(err);
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
 }
 
-// ════════════════════════════════════════════════════
-//  フィールド入出力
-// ════════════════════════════════════════════════════
+// ── フィールド ───────────────────────────────────────
 const FMAP = [
-  ['f_company','card_company'], ['f_department','card_department'],
-  ['f_name','card_name'], ['f_phone','card_phone'], ['f_email','card_email'],
-  ['f_exhibition','exhibition'], ['f_date','date'], ['f_staff','staff'],
-  ['f_q1','q1'], ['f_q1_other','q1_other'],
-  ['f_q2','q2'], ['f_q2_other','q2_other'],
-  ['f_q3','q3'], ['f_q3_other','q3_other'],
-  ['f_q4','q4'], ['f_q4_other','q4_other'],
-  ['f_q5','q5'], ['f_q5_other','q5_other'],
-  ['f_q6','q6'], ['f_q6_other','q6_other'],
-  ['f_q7','q7'], ['f_q7_other','q7_other'],
-  ['f_q8','q8'], ['f_q8_time','q8_visit_time'],
+  ['f_company','card_company'],['f_department','card_department'],
+  ['f_name','card_name'],['f_phone','card_phone'],['f_email','card_email'],
+  ['f_exhibition','exhibition'],['f_date','date'],['f_staff','staff'],
+  ['f_q1','q1'],['f_q1_other','q1_other'],
+  ['f_q2','q2'],['f_q2_other','q2_other'],
+  ['f_q3','q3'],['f_q3_other','q3_other'],
+  ['f_q4','q4'],['f_q4_other','q4_other'],
+  ['f_q5','q5'],['f_q5_other','q5_other'],
+  ['f_q6','q6'],['f_q6_other','q6_other'],
+  ['f_q7','q7'],['f_q7_other','q7_other'],
+  ['f_q8','q8'],['f_q8_time','q8_visit_time'],
   ['f_memo','memo'],
 ];
-
 function fill(d) {
-  FMAP.forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = d[key] || '';
-  });
+  FMAP.forEach(([id,key]) => { const el=document.getElementById(id); if(el) el.value=d[key]||''; });
 }
-
 function collect() {
-  const d = {};
-  FMAP.forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    d[key] = el ? el.value.trim() : '';
-  });
+  const d={};
+  FMAP.forEach(([id,key]) => { const el=document.getElementById(id); d[key]=el?el.value.trim():''; });
   return d;
 }
 
-// ════════════════════════════════════════════════════
-//  スプレッドシート送信
-// ════════════════════════════════════════════════════
-async function submit() {
-  const gasUrl = localStorage.getItem('xef_gas') || GAS_URL_DEFAULT;
-
+// ── 送信 ─────────────────────────────────────────────
+async function submitData() {
   document.getElementById('submitBtn').disabled = true;
   showStatus('loading', 'スプレッドシートに送信中...');
 
-  const payload     = collect();
-  payload._rank     = calcRank(payload);
-  payload._sentAt   = new Date().toISOString();
+  const payload   = collect();
+  payload._rank   = calcRank(payload);
+  payload._sentAt = new Date().toISOString();
 
   try {
-    // no-cors で送信（GAS側でCORSヘッダーが返せないため）
-    await fetch(gasUrl, {
+    await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload),
     });
-
-    // no-cors はレスポンスが読めないので成功とみなす
     showStatus('success', '✅ 送信完了！スプレッドシートを確認してください');
-    setTimeout(() => {
-      reset();
-    }, 3000);
-
+    setTimeout(reset, 3000);
   } catch(err) {
     showStatus('error', '送信エラー: ' + err.message);
   } finally {
