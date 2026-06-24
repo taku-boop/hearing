@@ -65,7 +65,6 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 .field:last-child{margin-bottom:0;}
 .field label{display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:7px;}
 
-/* ★編集できる入力欄★ */
 .field input{
   display:block;
   width:100%;
@@ -126,7 +125,6 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <div class="main">
 
-  <!-- アップロード -->
   <div class="card">
     <div class="card-lbl">📷 シートを撮影・アップロード</div>
     <div class="upload-zone" id="uploadZone">
@@ -145,7 +143,6 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
   <div style="height:12px;"></div>
   <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
-  <!-- 結果エリア -->
   <div id="resultArea" style="display:none;">
 
     <div id="rankDisplay"></div>
@@ -218,7 +215,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
     </div>
 
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
-    <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
+    <button class="btn btn-outline" onclick="doReset()">← 最初からやり長す</button>
 
   </div>
 </div>
@@ -230,7 +227,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
 const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models';
-// APIキーはlocalStorageに保存（HTMLには書かない）
+
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
 
@@ -299,9 +296,9 @@ function calcRank(d) {
   return 'C';
 }
 const RINFO = {
-  A:{ cls:'ra', label:'Aランク　今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
-  B:{ cls:'rb', label:'Bランク　継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク　情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
   const i = RINFO[r];
@@ -312,7 +309,7 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── AI読み取り ────────────────────────────────────
+// ── AI読み取り（正しくURLを生成する修正版） ────────────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -337,29 +334,25 @@ async function analyze() {
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    const res = await fetch(
-      `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [
-            { inline_data: { mime_type: imgMime, data: imgB64 } },
-            { text: prompt }
-          ]}],
-          generationConfig: { temperature: 0 }
-        })
-      }
-    );
+    // APIキーを確実かつクリーンにURLへ付与
+    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { inline_data: { mime_type: imgMime, data: imgB64 } },
+          { text: prompt }
+        ]}]
+      })
+    });
 
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
-      if (msg.includes('not found') || msg.includes('見つからない')) {
-        throw new Error('AIモデルエラー。管理者に連絡してください。');
-      }
-      if (res.status === 400 || res.status === 403) {
-        throw new Error('APIキーに問題があります。管理者に連絡してください。');
+      if (res.status === 401 || res.status === 400 || res.status === 403) {
+        throw new Error('APIキーが無効、または未設定です。設定画面から正しいキーを入力し直してください。');
       }
       throw new Error(msg || `エラー(${res.status})`);
     }
@@ -442,9 +435,29 @@ function saveCfg() {
   showSt('success', '✅ APIキーを保存しました');
   setTimeout(hideSt, 2000);
 }
+
+// ── スプレッドシート送信 ──────────────────────────
+async function submitData() {
+  document.getElementById('submitBtn').disabled = true;
+  showSt('loading', 'スプレッドシートに送信中...');
+  const payload   = collect();
+  payload._rank   = calcRank(payload);
+  payload._sentAt = new Date().toLocaleString('ja-JP');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
+    setTimeout(doReset, 4000);
+  } catch (err) {
+    showSt('error', '送信エラー: ' + err.message);
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
 </script>
 
-<!-- 設定モーダル -->
 <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
   <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
     <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
@@ -466,25 +479,6 @@ function saveCfg() {
     <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
   </div>
 </div>
-async function submitData() {
-  document.getElementById('submitBtn').disabled = true;
-  showSt('loading', 'スプレッドシートに送信中...');
-  const payload   = collect();
-  payload._rank   = calcRank(payload);
-  payload._sentAt = new Date().toLocaleString('ja-JP');
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload),
-    });
-    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
-    setTimeout(doReset, 4000);
-  } catch (err) {
-    showSt('error', '送信エラー: ' + err.message);
-    document.getElementById('submitBtn').disabled = false;
-  }
-}
-</script>
+
 </body>
 </html>
