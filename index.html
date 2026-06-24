@@ -215,18 +215,18 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
     </div>
 
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
-    <button class="btn btn-outline" onclick="doReset()">← 最初からやり長す</button>
+    <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
 
   </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定
+//  固定設定（AQキーに対応するため、v1beta エンドポイントに修正）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
 const GEMINI_MODEL = 'gemini-1.5-flash';
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models';
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; // ← v1 から v1beta に修正
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
@@ -309,7 +309,7 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── AI読み取り（正しくURLを生成する修正版） ────────────────────────
+// ── AI読み取り ────────────────────────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -334,7 +334,6 @@ async function analyze() {
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    // APIキーを確実かつクリーンにURLへ付与
     const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
     const res = await fetch(url, {
@@ -352,7 +351,7 @@ async function analyze() {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
       if (res.status === 401 || res.status === 400 || res.status === 403) {
-        throw new Error('APIキーが無効、または未設定です。設定画面から正しいキーを入力し直してください。');
+        throw new Error('API認証エラー。新キー(AQ...)に対応するため、マクロURLを最新版に修正しました。右上の⚙設定から、もう一度「鍵をコピー」した値を保存し直してください。');
       }
       throw new Error(msg || `エラー(${res.status})`);
     }
@@ -369,7 +368,6 @@ async function analyze() {
     const rank = calcRank(data);
     renderRank(rank);
 
-    // iOS Safari バグ回避：100ms後に表示
     setTimeout(() => {
       document.getElementById('resultArea').style.display = 'block';
       showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
