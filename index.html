@@ -129,9 +129,9 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
     <div class="card-lbl">📷 シートを撮影・アップロード</div>
     <div class="upload-zone" id="uploadZone">
       <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
-      <span class="upload-icon">🖼️</span>
-      <div class="upload-main">タップして撮影 / ライブラリから選択</div>
-      <div class="upload-sub">名刺付きシートを1枚選んでください<br>✅ 手書き文字もAIが読み取ります</div>
+      <span class="upload-icon">📁</span>
+      <div class="upload-main">タップして写真を選択</div>
+      <div class="upload-sub">フォルダ（ライブラリ）から画像を選ぶか、その場で撮影できます<br>✅ 手書き文字もAIが読み取ります</div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" src="" alt="">
@@ -222,7 +222,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定
+//  固定設定（安定稼働する標準設定に戻しました）
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
 const GEMINI_MODEL = 'gemini-1.5-flash'; 
@@ -233,7 +233,7 @@ function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── 【重要修正】LoadFailedを絶対に起こさない超軽量アルバム・カメラ読み込み ──
+// ── 写真選択・プレビュー表示 ────────────────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -245,8 +245,8 @@ function onFile(input) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        // スマホのメモリ（RAM）上限で絶対に落とされないよう、読み込み制限サイズを1000pxに最適化
-        const MAX = 1000; 
+        // スマホのメモリ負荷（LoadFailed）を確実に防ぐための安定サイズ
+        const MAX = 1200; 
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
         if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -255,11 +255,11 @@ function onFile(input) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
         
-        // 圧縮比率を0.75に調整し、転送容量を大幅カット（AI認識精度は落ちません）
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
         imgB64 = dataUrl.split(',')[1];
         imgMime = 'image/jpeg';
         
+        // 画面に写真をしっかり反映させる
         document.getElementById('previewImg').src = dataUrl;
         document.getElementById('uploadZone').style.display  = 'none';
         document.getElementById('previewWrap').style.display = 'block';
@@ -267,14 +267,12 @@ function onFile(input) {
         document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
-        showSt('error', '画像処理がタイムアウトしました。標準ブラウザ（Safari/Chrome）で開き直してください。');
+        showSt('error', '画像処理に失敗しました。SafariやChromeなどの標準ブラウザで開き直してください。');
       }
     };
-    img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。ファイル形式を確認してください。'); };
+    img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。'); };
     img.src = e.target.result;
   };
-  // 読み取り失敗（LoadFailed）を検知した場合のセーフティエラートラップ
-  reader.onerror = () => { showSt('error', '端末のメモリ不足により読み込みが遮断されました。別の写真でお試しください。'); };
   reader.readAsDataURL(file);
 }
 
@@ -308,6 +306,7 @@ function calcRank(d) {
   if ((hasPrj && mid)||issue||visit) return 'B';
   return 'C';
 }
+
 const RINFO = {
   A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
   B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
@@ -322,7 +321,7 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── AI読み取り ────────────────────────────────────
+// ── AI読み取り（最もエラーが出ない、標準の確認・修正フローに戻しました） ──
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -334,7 +333,6 @@ async function analyze() {
   showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
   const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-
 【必ず守るルール】
 1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること
 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること
@@ -348,7 +346,6 @@ async function analyze() {
 
   try {
     const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -364,7 +361,7 @@ async function analyze() {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
       if (res.status === 429 || msg.includes('high demand')) {
-        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
+        throw new Error('無料枠のサーバーが一時的に非常に混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
       }
       throw new Error(msg || `エラー(${res.status})`);
     }
