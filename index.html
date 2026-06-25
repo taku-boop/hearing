@@ -128,10 +128,10 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
   <div class="card">
     <div class="card-lbl">📷 シートを撮影・アップロード</div>
     <div class="upload-zone" id="uploadZone">
-      <input type="file" accept="image/*" capture="environment" id="fileInput" onchange="onFile(this)">
-      <span class="upload-icon">📄</span>
-      <div class="upload-main">タップして撮影 / 選択</div>
-      <div class="upload-sub">名刺付きシートを1枚で撮影<br>✅ 手書き文字もAIが読み取ります</div>
+      <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
+      <span class="upload-icon">🖼️</span>
+      <div class="upload-main">タップして撮影 / ライブラリから選択</div>
+      <div class="upload-sub">その場でカメラ撮影するか、写真アルバムから選択できます<br>✅ 手書き文字もAIが読み取ります</div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" src="" alt="">
@@ -222,10 +222,10 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定（新型AQキー・v1betaで確実に通る稼働モデル名に差し替え）
+//  固定設定
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash'; // ← 新キー提供の最新標準モデル名に変更し404を回避
+const GEMINI_MODEL = 'gemini-2.5-flash'; 
 const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
@@ -237,27 +237,38 @@ let imgB64 = null, imgMime = 'image/jpeg';
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
+  
+  showSt('loading', '画像を読み込み中...');
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX = 1600;
-      let w = img.width, h = img.height;
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      imgB64 = dataUrl.split(',')[1];
-      imgMime = 'image/jpeg';
-      document.getElementById('previewImg').src = dataUrl;
-      document.getElementById('uploadZone').style.display  = 'none';
-      document.getElementById('previewWrap').style.display = 'block';
-      document.getElementById('analyzeBtn').disabled = false;
-      document.getElementById('resultArea').style.display  = 'none';
-      hideSt();
+      try {
+        const canvas = document.createElement('canvas');
+        const MAX = 1200; 
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        canvas.width = w; canvas.height = h;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+        imgB64 = dataUrl.split(',')[1];
+        imgMime = 'image/jpeg';
+        
+        document.getElementById('previewImg').src = dataUrl;
+        document.getElementById('uploadZone').style.display  = 'none';
+        document.getElementById('previewWrap').style.display = 'block';
+        document.getElementById('analyzeBtn').disabled = false;
+        document.getElementById('resultArea').style.display  = 'none';
+        hideSt();
+      } catch (err) {
+        showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて選択してください。');
+      }
     };
+    img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。'); };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
@@ -350,6 +361,9 @@ async function analyze() {
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
+      if (res.status === 429 || msg.includes('high demand')) {
+        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
+      }
       throw new Error(msg || `エラー(${res.status})`);
     }
 
@@ -470,8 +484,6 @@ async function submitData() {
     <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..."
       style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
     <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
-    <button onclick="saveCfg()" style="display:block;width:100%;padding:16px;background:#e8441a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">保存する</button>
-    <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
   </div>
 </div>
 
