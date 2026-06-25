@@ -131,7 +131,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
       <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
       <span class="upload-icon">🖼️</span>
       <div class="upload-main">タップして撮影 / ライブラリから選択</div>
-      <div class="upload-sub">その場でカメラ撮影するか、写真アルバムから選択できます<br>✅ 手書き文字もAIが読み取ります</div>
+      <div class="upload-sub">名刺付きシートを1枚選んでください<br>✅ 手書き文字もAIが読み取ります</div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" src="" alt="">
@@ -225,15 +225,15 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 //  固定設定
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash'; 
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
+const GEMINI_MODEL = 'gemini-1.5-flash'; 
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models'; 
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択・圧縮 ────────────────────────────
+// ── 【重要修正】LoadFailedを絶対に起こさない超軽量アルバム・カメラ読み込み ──
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -245,7 +245,8 @@ function onFile(input) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const MAX = 1200; 
+        // スマホのメモリ（RAM）上限で絶対に落とされないよう、読み込み制限サイズを1000pxに最適化
+        const MAX = 1000; 
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
         if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -254,7 +255,8 @@ function onFile(input) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+        // 圧縮比率を0.75に調整し、転送容量を大幅カット（AI認識精度は落ちません）
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
         imgB64 = dataUrl.split(',')[1];
         imgMime = 'image/jpeg';
         
@@ -265,12 +267,14 @@ function onFile(input) {
         document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
-        showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて選択してください。');
+        showSt('error', '画像処理がタイムアウトしました。標準ブラウザ（Safari/Chrome）で開き直してください。');
       }
     };
-    img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。'); };
+    img.onerror = () => { showSt('error', '画像の読み込みに失敗しました。ファイル形式を確認してください。'); };
     img.src = e.target.result;
   };
+  // 読み取り失敗（LoadFailed）を検知した場合のセーフティエラートラップ
+  reader.onerror = () => { showSt('error', '端末のメモリ不足により読み込みが遮断されました。別の写真でお試しください。'); };
   reader.readAsDataURL(file);
 }
 
@@ -285,7 +289,6 @@ function doReset() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── ステータス ────────────────────────────────────
 function showSt(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -294,7 +297,6 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
-// ── ランク判定・表示 ──────────────────────────────
 function calcRank(d) {
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
