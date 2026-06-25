@@ -144,15 +144,12 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
   <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
   <div id="resultArea" style="display:none;">
-
     <div id="rankDisplay"></div>
-
     <div class="edit-banner">
       ✏️ <strong>内容を修正できます</strong><br>
       各項目の入力欄をタップするとキーボードが表示されます。<br>
       AIの読み違いを直してから送信してください。
     </div>
-
     <div class="card">
       <div class="sec-title">📇 名刺情報</div>
       <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
@@ -161,14 +158,12 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
       <div class="field"><label>電話番号</label><input id="f_phone" type="text" inputmode="tel"></div>
       <div class="field"><label>メールアドレス</label><input id="f_email" type="text" inputmode="email"></div>
     </div>
-
     <div class="card">
       <div class="sec-title">📋 基本情報</div>
       <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
       <div class="field"><label>日付</label><input id="f_date" type="text"></div>
       <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
     </div>
-
     <div class="card">
       <div class="sec-title">Q1 開発・試作の案件</div>
       <div class="field"><label>チェック内容</label><input id="f_q1" type="text"></div>
@@ -213,10 +208,8 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
       <div class="sec-title">📝 備考・担当者メモ（手書き）</div>
       <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容が入ります"></textarea></div>
     </div>
-
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
     <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
-
   </div>
 </div>
 
@@ -262,7 +255,6 @@ function onFile(input) {
         document.getElementById('uploadZone').style.display  = 'none';
         document.getElementById('previewWrap').style.display = 'block';
         document.getElementById('analyzeBtn').disabled = false;
-        document.getElementById('resultArea').style.display  = 'none';
         hideSt();
       } catch (err) {
         showSt('error', '画像処理に失敗しました。別のブラウザアプリで試すか、画質を下げて撮影してください。');
@@ -305,21 +297,7 @@ function calcRank(d) {
   return 'C';
 }
 
-const RINFO = {
-  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
-  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
-};
-function renderRank(r) {
-  const i = RINFO[r];
-  document.getElementById('rankDisplay').innerHTML = `
-    <div class="rank-box ${i.cls}">
-      <div class="rank-circle">${r}</div>
-      <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
-    </div>`;
-}
-
-// ── メイン読み取り（自動連打を廃止。データ引継ぎを保証するバックグラウンド型） ──
+// ── 【ボタン押下で即時解放】待ち時間を完全ゼロにして次へ進む ──────────────────
 async function analyze() {
   const GEMINI_KEY = getKey();
   if (!GEMINI_KEY) {
@@ -330,27 +308,26 @@ async function analyze() {
   sheetSubmitCount++;
   const currentCount = sheetSubmitCount;
   
-  // 連打スパム判定を防ぐため、リセット前に画像データを完全に別の変数に退避させる
   const targetB64 = imgB64;
   const targetMime = imgMime;
 
-  // ボタンを押した瞬間に画面を初期状態に戻し、次の撮影を可能にする
+  // 撮影した写真を即リセットし、スタッフは一瞬で次の撮影へ移れる
   imgB64 = null;
   document.getElementById('fileInput').value = '';
   document.getElementById('uploadZone').style.display  = 'block';
   document.getElementById('previewWrap').style.display = 'none';
   document.getElementById('analyzeBtn').disabled = true;
   
-  showSt('loading', `⏳ ${currentCount}枚目を送信中...（そのまま次の撮影を進めて大丈夫です）`);
+  showSt('loading', `⏳ ${currentCount}枚目をバックグラウンドで解析中...（続けて次を撮影してください）`);
 
-  // ブロックを受けないよう、間隔を空けた丁寧なリトライ処理へ移行（初回attempt=1）
-  runSafeBackgroundProcess(currentCount, targetB64, targetMime, GEMINI_KEY, 1);
+  // 無限自動リトライ付きのタスクを実行（通るまで絶対に諦めません）
+  runInfiniteProcess(currentCount, targetB64, targetMime, GEMINI_KEY, 1);
 }
 
-// スパム判定をすり抜ける、時間差セーフティ・リトライ処理
-async function runSafeBackgroundProcess(count, b64Data, mimeData, apiKey, attempt) {
+// ── 【執念の無限リトライシステム】混雑を突破するまで何度でも自動再送 ──────────────────
+async function runInfiniteProcess(count, b64Data, mimeData, apiKey, attempt) {
   const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-必ずJSON形式のみを返却してください。余計な説明文やマークダウンのコードブロック等は一切不要です。
+必ずJSON形式のみを返却してください。余計な文字列は一切不要です。
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
@@ -366,6 +343,7 @@ async function runSafeBackgroundProcess(count, b64Data, mimeData, apiKey, attemp
       })
     });
 
+    // 混雑などで弾かれた場合は、即座にキャッチへ飛ばして自動再送ルートへ
     if (!res.ok) {
       throw new Error('Server Busy');
     }
@@ -378,30 +356,27 @@ async function runSafeBackgroundProcess(count, b64Data, mimeData, apiKey, attemp
     data._rank   = calcRank(data);
     data._sentAt = new Date().toLocaleString('ja-JP');
 
-    // GASを叩いてスプレッドシートへ格納
+    // GASでスプレッドシートへ書き込み
     await fetch(GAS_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(data),
     });
 
+    // 送信が成功したら完了通知を出す
     showSt('success', `✅ ${count}枚目の自動送信が完了しました！`);
     setTimeout(() => {
       if(!document.getElementById('previewImg').src.includes('data:image')) hideSt();
     }, 4000);
 
   } catch (err) {
-    // スパム扱いされないよう、失敗するごとに 5秒 ➡️ 10秒 ➡️ 15秒 と間隔を広げて最大3回だけ再送を試みる
-    if (attempt < 3) {
-      const waitTime = attempt * 5000; 
-      showSt('loading', `⏳ 混雑中... ${count}枚目は ${waitTime/1000}秒後に自動で送り直します（次を撮影していてOKです）`);
-      setTimeout(() => {
-        runSafeBackgroundProcess(count, b64Data, mimeData, apiKey, attempt + 1);
-      }, waitTime);
-    } else {
-      // それでもダメな時だけエラーを通知
-      showSt('error', `❌ ${count}枚目は混雑のピークのため送信できませんでした。少し時間を置いて撮り直してください。`);
-    }
+    // スパムブロックを受けないよう、5秒〜10秒の安全な間隔を空けながら、通るまで「無限」に自動リトライを繰り返す
+    const nextWait = attempt >= 5 ? 10000 : 5000; 
+    showSt('loading', `⏳ サーバー混雑中... ${count}枚目は自動で再送要求を維持しています（${attempt}回目の挑戦・そのまま次を撮影してください）`);
+    
+    setTimeout(() => {
+      runInfiniteProcess(count, b64Data, mimeData, apiKey, attempt + 1);
+    }, nextWait);
   }
 }
 
@@ -444,9 +419,3 @@ async function submitData() {}
     <div style="margin-bottom:6px;font-size:13px;font-weight:700;color:#444;">Gemini API Key</div>
     <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..."
       style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
-    <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
-  </div>
-</div>
-
-</body>
-</html>
