@@ -52,7 +52,7 @@
       font-weight: 700;
     }
 
-    /* メメインレイアウト */
+    /* メインレイアウト */
     .main {
       padding: 16px;
       max-width: 500px;
@@ -455,7 +455,7 @@
       </div>
       <div style="background:#f0f9ff;border-radius:10px;padding:14px;font-size:13px;color:#0369a1;line-height:1.7;margin-bottom:18px;">
         📌 <strong>Gemini APIキー取得方法（無料）</strong><br>
-        1. <a href="[https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)" target="_blank" style="color:#2563eb;">[aistudio.google.com/apikey](https://aistudio.google.com/apikey)</a> を開く<br>
+        1. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;">aistudio.google.com/apikey</a> を開く<br>
         2. Googleアカウントでログイン<br>
         3. 「APIキーを作成」→「鍵をコピー」<br>
         4. 下の欄に貼り付けて「保存する」
@@ -469,9 +469,12 @@
   </div>
 
   <script>
-    const GAS_URL      = '[https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec](https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec)';
+    // ═══════════════════════════════════════════════════
+    //  安定稼働用エンドポイント・URL構造調整
+    // ═══════════════════════════════════════════════════
+    const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
     const GEMINI_MODEL = 'gemini-2.5-flash';
-    const GEMINI_API   = '[https://generativelanguage.googleapis.com/v1beta/models](https://generativelanguage.googleapis.com/v1beta/models)';
+    const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta';
 
     function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
@@ -518,7 +521,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ステータス表示表示
+    // ステータス表示
     function showSt(type, msg) {
       const el = document.getElementById('status');
       el.className = 'status ' + type;
@@ -555,7 +558,7 @@
         </div>`;
     }
 
-    // AI読み取り
+    // AI読み取り（404エラー対策 & 推測入力防止版）
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -566,7 +569,6 @@
       document.getElementById('resultArea').style.display = 'none';
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-      // 勝手な入力を防ぐ強力なプロンプト制約
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
 
 【最重要ルール：ハルシネーション（嘘・推測）の厳禁】
@@ -581,7 +583,8 @@
 3. 日本語の手書き文字を丁寧に読み取ること。`;
 
       try {
-        const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+        // 404エラーを回避するための正しいパス構造
+        const url = `${GEMINI_API}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
         const res = await fetch(url, {
           method: 'POST',
@@ -593,7 +596,6 @@
                 { text: prompt }
               ]
             }],
-            // JSONで確定出力させ、フォーマットエラーを防ぐ設定
             generationConfig: {
               response_mime_type: "application/json",
               response_schema: {
