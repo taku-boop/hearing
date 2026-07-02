@@ -65,6 +65,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 .field:last-child{margin-bottom:0;}
 .field label{display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:7px;}
 
+/* ★編集できる入力欄★ */
 .field input{
   display:block;
   width:100%;
@@ -125,13 +126,14 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <div class="main">
 
+  <!-- アップロード -->
   <div class="card">
     <div class="card-lbl">📷 シートを撮影・アップロード</div>
     <div class="upload-zone" id="uploadZone">
-      <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
+      <input type="file" accept="image/*" capture="environment" id="fileInput" onchange="onFile(this)">
       <span class="upload-icon">📄</span>
       <div class="upload-main">タップして撮影 / 選択</div>
-      <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br>✅ 手書き文字もAIが読み取ります</div>
+      <div class="upload-sub">名刺付きシートを1枚で撮影<br>✅ 手書き文字もAIが読み取ります</div>
     </div>
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" src="" alt="">
@@ -143,6 +145,7 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
   <div style="height:12px;"></div>
   <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
+  <!-- 結果エリア -->
   <div id="resultArea" style="display:none;">
 
     <div id="rankDisplay"></div>
@@ -222,12 +225,12 @@ body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background
 
 <script>
 // ═══════════════════════════════════════════════════
-//  固定設定（新型AQキー・v1betaで確実に通る稼働モデル名に差し替え）
+//  固定設定
 // ═══════════════════════════════════════════════════
 const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash'; 
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models'; 
-
+const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models';
+// APIキーはlocalStorageに保存（HTMLには書かない）
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 // ═══════════════════════════════════════════════════
 
@@ -286,7 +289,7 @@ function hideSt() { document.getElementById('status').className = 'status'; }
 // ── ランク判定・表示 ──────────────────────────────
 function calcRank(d) {
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
-  const hasPrj = /ある|定定期|今後/.test(q1);
+  const hasPrj = /ある|定期的|今後/.test(q1);
   const urgent = /大至急|3ヶ月/.test(q2);
   const mid    = /6ヶ月|1年|未定/.test(q2);
   const issue  = q5.length > 0 && !q5.includes('課題なし');
@@ -296,9 +299,9 @@ function calcRank(d) {
   return 'C';
 }
 const RINFO = {
-  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
-  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+  A:{ cls:'ra', label:'Aランク　今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+  B:{ cls:'rb', label:'Bランク　継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+  C:{ cls:'rc', label:'Cランク　情報提供のみ', desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
   const i = RINFO[r];
@@ -320,38 +323,49 @@ async function analyze() {
   document.getElementById('resultArea').style.display = 'none';
   showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-  const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
+  const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
 
-【必ず守るルール】
-1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること
-2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること
-3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること
-4. 日本語の手書き文字を丁寧に読み取ること
-5. 複数選択はカンマ区切りで列記すること
-6. 読み取れない項目は空文字にすること
-7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）
+【絶対ルール — 違反厳禁】
+- 実際に写真に写っているチェック・文字のみを返すこと
+- チェックが入っていない選択肢は絶対に返さないこと
+- 名刺が写っていない場合、名刺欄は全て空文字にすること
+- 手書きで何も書かれていない欄は空文字にすること
+- 推測・補完・想像で内容を埋めることは絶対に禁止
+- シートが白紙・未記入の場合は全項目を空文字で返すこと
+- JSONのみを返すこと（説明文・コードブロック・前置き一切不要）
+
+【読み取りルール】
+- 名刺が貼付されている場合のみ名刺の情報を読み取る
+- 印刷された□に手書きで✓・○・×・塗りつぶし等が実際に入っている項目のみ返す
+- 「その他」欄に実際に手書きがある場合のみその内容を返す
+- 複数チェックはカンマ区切り
 
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
-    const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { inline_data: { mime_type: imgMime, data: imgB64 } },
-          { text: prompt }
-        ]}]
-      })
-    });
+    const res = await fetch(
+      `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: imgMime, data: imgB64 } },
+            { text: prompt }
+          ]}],
+          generationConfig: { temperature: 0 }
+        })
+      }
+    );
 
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       const msg = e?.error?.message || '';
-      if (res.status === 429 || msg.includes('high demand')) {
-        throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
+      if (msg.includes('not found') || msg.includes('見つからない')) {
+        throw new Error('AIモデルエラー。管理者に連絡してください。');
+      }
+      if (res.status === 400 || res.status === 403) {
+        throw new Error('APIキーに問題があります。管理者に連絡してください。');
       }
       throw new Error(msg || `エラー(${res.status})`);
     }
@@ -368,6 +382,7 @@ async function analyze() {
     const rank = calcRank(data);
     renderRank(rank);
 
+    // iOS Safari バグ回避：100ms後に表示
     setTimeout(() => {
       document.getElementById('resultArea').style.display = 'block';
       showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
@@ -433,29 +448,9 @@ function saveCfg() {
   showSt('success', '✅ APIキーを保存しました');
   setTimeout(hideSt, 2000);
 }
-
-// ── スプレッドシート送信 ──────────────────────────
-async function submitData() {
-  document.getElementById('submitBtn').disabled = true;
-  showSt('loading', 'スプレッドシートに送信中...');
-  const payload   = collect();
-  payload._rank   = calcRank(payload);
-  payload._sentAt = new Date().toLocaleString('ja-JP');
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload),
-    });
-    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
-    setTimeout(doReset, 4000);
-  } catch (err) {
-    showSt('error', '送信エラー: ' + err.message);
-    document.getElementById('submitBtn').disabled = false;
-  }
-}
 </script>
 
+<!-- 設定モーダル -->
 <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
   <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
     <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
@@ -477,6 +472,25 @@ async function submitData() {
     <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
   </div>
 </div>
-
+async function submitData() {
+  document.getElementById('submitBtn').disabled = true;
+  showSt('loading', 'スプレッドシートに送信中...');
+  const payload   = collect();
+  payload._rank   = calcRank(payload);
+  payload._sentAt = new Date().toLocaleString('ja-JP');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
+    setTimeout(doReset, 4000);
+  } catch (err) {
+    showSt('error', '送信エラー: ' + err.message);
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+</script>
 </body>
 </html>
