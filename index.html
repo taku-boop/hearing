@@ -456,6 +456,7 @@
 
     let imgB64 = null, imgMime = 'image/jpeg';
 
+    // ── ファイル選択・圧縮（★選択した瞬間にresultAreaを表示するように変更） ────────────────────────────
     function onFile(input) {
       const file = input.files[0];
       if (!file) return;
@@ -464,7 +465,7 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX = 1400; // 読み込みエラー回避のため圧縮率をわずかに強化
+          const MAX = 1400; 
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
           if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -477,7 +478,9 @@
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
           document.getElementById('analyzeBtn').disabled = false;
-          document.getElementById('resultArea').style.display  = 'none';
+          
+          // AIの読み取りを待たずに、ここで入力画面をすぐ出します
+          document.getElementById('resultArea').style.display  = 'block';
           hideSt();
         };
         img.src = e.target.result;
@@ -492,6 +495,13 @@
       document.getElementById('previewWrap').style.display = 'none';
       document.getElementById('analyzeBtn').disabled = true;
       document.getElementById('resultArea').style.display  = 'none';
+      
+      // フォームの値をリセット
+      const emptyData = {};
+      FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
+      fill(emptyData);
+      document.getElementById('rankDisplay').innerHTML = '';
+      
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -536,7 +546,6 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
-      document.getElementById('resultArea').style.display = 'none';
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。右上に名刺が貼付されている場合は名刺の文字を全て読み取ること。印刷された□に手書きで✓・○・×が入っている選択肢や「その他」欄、備考欄の手書きテキストを正確に読み取り、日本語として抽出してください。複数選択はカンマ区切り。`;
@@ -544,7 +553,6 @@
       try {
         const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
-        // 2026年最新の最安定化仕様（Response SchemaによるJSON強制）
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -593,16 +601,13 @@
         const rank = calcRank(data);
         renderRank(rank);
 
+        showSt('success', '読み取り完了！自動入力された内容を確認・修正してください');
         setTimeout(() => {
-          document.getElementById('resultArea').style.display = 'block';
-          showSt('success', '読み取り完了！内容を確認・修正して送信してください');
-          setTimeout(() => {
-            document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 200);
-        }, 100);
+          document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
 
       } catch (err) {
-        showSt('error', '読み取りエラー: ' + err.message);
+        showSt('error', 'AI読み取りエラー: ' + err.message + ' (手動で入力して送信することは可能です)');
       } finally {
         document.getElementById('analyzeBtn').disabled = false;
       }
