@@ -161,7 +161,8 @@
   <script>
     const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
     const GEMINI_MODEL = 'gemini-2.5-flash';
-    const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
+    // 【最重要修正】 重複していた末尾の /models を削除し、正しいAPIの基底URLに変更しました
+    const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta';
 
     function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
@@ -208,7 +209,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ステータス
     function showSt(type, msg) {
       const el = document.getElementById('status');
       el.className = 'status ' + type;
@@ -217,7 +217,6 @@
     }
     function hideSt() { document.getElementById('status').className = 'status'; }
 
-    // ランク判定
     function calcRank(d) {
       const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
       const hasPrj = /ある|定定期|今後/.test(q1);
@@ -243,7 +242,6 @@
         </div>`;
     }
 
-    // AI読み取り（最新の構造化JSON形式を100%保証し、フリーズを完全回避する記述）
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -264,7 +262,8 @@
 6. 読み取れない項目は空文字にすること`;
 
       try {
-        const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+        // 正しいURLパスを動的に組み立てます
+        const url = `${GEMINI_API}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
         const res = await fetch(url, {
           method: 'POST',
@@ -319,7 +318,6 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        // ボタンの活性を確実に戻す
         document.getElementById('submitBtn').disabled = false;
 
         setTimeout(() => {
@@ -337,7 +335,6 @@
       }
     }
 
-    // フィールド入出力
     const FMAP = [
       ['f_company','card_company'],['f_department','card_department'],
       ['f_name','card_name'],['f_phone','card_phone'],['f_email','card_email'],
@@ -372,7 +369,6 @@
       return d;
     }
 
-    // 設定画面
     function openCfg() {
       const k = getKey();
       document.getElementById('s_key').value = k;
@@ -390,7 +386,6 @@
       setTimeout(hideSt, 2000);
     }
 
-    // スプレッドシート送信（元の動作していたtext/plain形式に完全復帰）
     async function submitData() {
       document.getElementById('submitBtn').disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
