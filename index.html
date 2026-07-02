@@ -552,7 +552,7 @@
         </div>`;
     }
 
-    // AI読み取り（原因だった不一致スキーマを完全にクリーンアップ）
+    // AI読み取り（APIエラー原因だった大文字型指定を小文字の string / object に完全修復）
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -592,17 +592,17 @@
             generationConfig: {
               response_mime_type: "application/json",
               response_schema: {
-                type: "OBJECT",
+                type: "object",
                 properties: {
-                  card_company: { type: "STRING" }, card_department: { type: "STRING" }, card_name: { type: "STRING" },
-                  card_phone: { type: "STRING" }, card_email: { type: "STRING" }, date: { type: "STRING" },
-                  staff: { type: "STRING" }, exhibition: { type: "STRING" }, q1: { type: "STRING" },
-                  q1_other: { type: "STRING" }, q2: { type: "STRING" }, q2_other: { type: "STRING" },
-                  q3: { type: "STRING" }, q3_other: { type: "STRING" }, q4: { type: "STRING" },
-                  q4_other: { type: "STRING" }, q5: { type: "STRING" }, q5_other: { type: "STRING" },
-                  q6: { type: "STRING" }, q6_other: { type: "STRING" }, q7: { type: "STRING" },
-                  q7_other: { type: "STRING" }, q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
-                  memo: { type: "STRING" }
+                  card_company: { type: "string" }, card_department: { type: "string" }, card_name: { type: "string" },
+                  card_phone: { type: "string" }, card_email: { type: "string" }, date: { type: "string" },
+                  staff: { type: "string" }, exhibition: { type: "string" }, q1: { type: "string" },
+                  q1_other: { type: "string" }, q2: { type: "string" }, q2_other: { type: "string" },
+                  q3: { type: "string" }, q3_other: { type: "string" }, q4: { type: "string" },
+                  q4_other: { type: "string" }, q5: { type: "string" }, q5_other: { type: "string" },
+                  q6: { type: "string" }, q6_other: { type: "string" }, q7: { type: "string" },
+                  q7_other: { type: "string" }, q8: { type: "string" }, q8_visit_time: { type: "string" },
+                  memo: { type: "string" }
                 },
                 required: [
                   "card_company", "card_department", "card_name", "card_phone", "card_email", "date", "staff", "exhibition",
@@ -634,7 +634,7 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        // ボタンの活性状態を確実に担保
+        // 送信ボタンの活性化を100%保証
         document.getElementById('submitBtn').disabled = false;
 
         setTimeout(() => {
@@ -704,7 +704,7 @@
       setTimeout(hideSt, 2000);
     }
 
-    // スプレッドシート送信（元のJSONプレーンテキスト送信に戻しています）
+    // スプレッドシート送信（元のテキストJSON送信方式）
     async function submitData() {
       document.getElementById('submitBtn').disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
