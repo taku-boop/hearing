@@ -513,7 +513,7 @@
       document.getElementById('previewWrap').style.display = 'none';
       document.getElementById('analyzeBtn').disabled = true;
       document.getElementById('resultArea').style.display  = 'none';
-      document.getElementById('submitBtn').disabled = false; // ボタン状態のリセット
+      document.getElementById('submitBtn').disabled = false;
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -541,11 +541,10 @@
     const RINFO = {
       A: { cls:'ra', label:'Aランク 今すぐ対応', desc:'直近案件あり・大手開発者で案件見込み' },
       B: { cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-      C: { cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
     };
     
     function renderRank(r) {
-      const i = RINFO[r];
+      const i = RINFO[r] || { cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' };
       document.getElementById('rankDisplay').innerHTML = `
         <div class="rank-box ${i.cls}">
           <div class="rank-circle">${r}</div>
@@ -553,7 +552,7 @@
         </div>`;
     }
 
-    // AI読み取り（最も初期の正常だった項目名定義に完全固定）
+    // AI読み取り（原因だった不一致スキーマを完全にクリーンアップ）
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -635,7 +634,7 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        // ボタンフリーズバグ対策：ここで明示的に有効化状態にする
+        // ボタンの活性状態を確実に担保
         document.getElementById('submitBtn').disabled = false;
 
         setTimeout(() => {
@@ -705,7 +704,7 @@
       setTimeout(hideSt, 2000);
     }
 
-    // スプレッドシート送信（もともと動作していた時の純粋なJSON送信ロジックに完全復元）
+    // スプレッドシート送信（元のJSONプレーンテキスト送信に戻しています）
     async function submitData() {
       document.getElementById('submitBtn').disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
@@ -722,7 +721,6 @@
           body: JSON.stringify(payload),
         });
         
-        // mode: 'no-cors' の元々の仕様通り、送信直後に完了画面へ進める処理
         showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
         setTimeout(doReset, 4000);
         
