@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ヒアリング読取 | Cross Effect</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -353,7 +354,7 @@
         <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
         <span class="upload-icon"></span>
         <div class="upload-main">タップして撮影 / 選択</div>
-        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 名刺情報を最優先でAIが自動読取します</div>
+        <div class="upload-sub">名刺付きシートを選択。画像を入れると名刺データを一瞬で簡易抽出します</div>
       </div>
       <div class="preview-wrap" id="previewWrap">
         <img id="previewImg" src="" alt="">
@@ -361,20 +362,19 @@
       </div>
     </div>
 
-    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで読み取る</button>
+    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで残りのシート項目を読み取る</button>
     <div style="height:12px;"></div>
     <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
     <div id="resultArea" style="display:none;">
       <div id="rankDisplay"></div>
       <div class="edit-banner">
-        <strong>名刺・ヒアリング内容の修正</strong><br>
-        各項目の入力欄をタップすると修正できます。<br>
-        AIの読み違いや漏れを直してから送信してください。
+        <strong>内容の確認・修正</strong><br>
+        名刺情報は端末内で自動で簡易抽出されます。手書き文字や細かいチェック項目は上の「AIで読み取る」ボタンを押すか、手動で修正して送信してください。
       </div>
 
       <div class="card">
-        <div class="sec-title"> 名刺情報（最優先項目）</div>
+        <div class="sec-title"> 名刺情報</div>
         <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
         <div class="field"><label>部署</label><input id="f_department" type="text"></div>
         <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
@@ -464,7 +464,7 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX = 1600;
+          const MAX = 1400; // 読み込み処理安定のため1400pxにリサイズ
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
           if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -477,14 +477,34 @@
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
           document.getElementById('analyzeBtn').disabled = false;
-          
-          // 画像選択した瞬間にすぐ入力項目を表示
           document.getElementById('resultArea').style.display  = 'block';
-          hideSt();
+          
+          // 【併用機能】画像が上がった瞬間に、まずサーバーを介さず名刺テキストだけを抜く
+          fastCardOCR(dataUrl);
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
+    }
+
+    // ── 併用機能：ローカル処理による名刺情報の超速スピード抽出 ────────────────
+    async function fastCardOCR(imageSrc) {
+      showSt('loading', 'まず名刺情報を超速読取中...');
+      try {
+        const result = await Tesseract.recognize(imageSrc, 'jpn+eng');
+        const text = result.data.text;
+        
+        // メールアドレスと電話番号っぽい記述があれば、AIを待たずに即時先行あてはめ
+        const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        const phoneMatch = text.match(/0[0-9]{1,4}[-(]?[0-9]{1,4}[-)]?[0-9]{3,4}/);
+        
+        if (emailMatch) document.getElementById('f_email').value = emailMatch[0];
+        if (phoneMatch) document.getElementById('f_phone').value = phoneMatch[0];
+        
+        showSt('success', '名刺の先行抽出が完了しました。手書き項目等は下のボタンでAIを走らせてください。');
+      } catch (err) {
+        showSt('success', '簡易読取をスキップしました。そのままAIボタンを押してください。');
+      }
     }
 
     function doReset() {
@@ -499,7 +519,7 @@
       FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
       fill(emptyData);
       document.getElementById('rankDisplay').innerHTML = '';
-      document.getElementById('submitBtn').disabled = false; // ボタン無効化を確実に解除
+      document.getElementById('submitBtn').disabled = false; 
       
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -538,6 +558,7 @@
         </div>`;
     }
 
+    // ── AI読み取り機能（最新仕様での安定化版） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -545,13 +566,11 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
-      showSt('loading', 'AIが名刺・シートを解析中...（10〜20秒）');
+      showSt('loading', 'AIが手書き項目・チェック内容を深く解析中...（10〜20秒）');
 
-      // 名刺情報を最優先で誤字なく抜き取るようにプロンプト命令文を大幅強化
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-【最重要命令】
-右上にホチキス留め、または貼付されている「名刺」の画像を最優先でスキャンし、会社名、部署名、氏名、電話番号、メールアドレスを1文字の誤字もなく完全にテキストとして抽出してください。
-その後、印刷された□への手書きチェック（✓、○、×、塗りつぶし）やその他手書き項目、メモ欄を日本語として丁寧に読み取ってください。JSON形式のみを返却すること。`;
+印刷された□に手書きで✓や○が入っている選択肢や、記述式の「その他」欄、備考欄の手書き文字を正確に読み取り日本語として抽出してください。
+また、右上の名刺情報（会社名、部署、氏名、電話、メール）も読み取り、データに上書き反映してください。JSON形式のみで返却すること。`;
 
       try {
         const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
@@ -591,7 +610,7 @@
           const e = await response.json().catch(() => ({}));
           const msg = e?.error?.message || '';
           if (response.status === 429) {
-            throw new Error('Googleのアクセス制限（1分間に2回まで）に達しました。少し待って押し直してください。');
+            throw new Error('Googleの無料枠制限（1分間に2枚まで）に達しました。少し待って押し直してください。');
           }
           throw new Error(msg || `エラー(${response.status})`);
         }
@@ -604,13 +623,13 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        showSt('success', ' AI読み取り完了！自動入力された内容を確認・修正してください');
+        showSt('success', ' AIによる詳細項目の読み取りが完了しました！');
         setTimeout(() => {
           document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 200);
 
       } catch (err) {
-        showSt('error', 'AI読み取りエラー: ' + err.message + ' (このまま手動で入力して送信することは可能です)');
+        showSt('error', 'AI読取エラー: ' + err.message + ' (先行取得された名刺情報をベースに、手動で補完して送信可能です)');
       } finally {
         document.getElementById('analyzeBtn').disabled = false;
       }
@@ -633,8 +652,8 @@
     function fill(d) {
       FMAP.forEach(([id, key]) => {
         const el = document.getElementById(id);
-        if (!el) return;
-        el.value = d[key] || '';
+        if (!el || !d[key]) return; // 空白データで既存の先行入力値を上書き消去させないガード
+        el.value = d[key];
       });
     }
     function collect() {
@@ -665,7 +684,7 @@
 
     async function submitData() {
       const btn = document.getElementById('submitBtn');
-      btn.disabled = true; // 連打防止
+      btn.disabled = true; 
       showSt('loading', 'スプレッドシートに送信中...');
       
       const payload   = collect();
@@ -682,7 +701,7 @@
         setTimeout(doReset, 4000);
       } catch (err) {
         showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
-        btn.disabled = false; // エラー時はボタンを復活させて手動送信できるようにする
+        btn.disabled = false; 
       }
     }
   </script>
