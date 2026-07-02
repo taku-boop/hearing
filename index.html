@@ -554,7 +554,7 @@
       document.getElementById('resultArea').style.display = 'none';
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。  【必ず守るルール】 1. 右右上名刺が貼付されている場合は名刺の文字を全て読み取ること 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 4. 日本語の手書き文字を丁寧に読み取ること 5. 複数選択はカンマ区切りで列記すること 6. 読み取れない項目は空文字にすること 7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）  {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。  【必ず守るルール】 1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 4. 日本語の手書き文字を丁寧に読み取ること 5. 複数選択はカンマ区切りで列記すること 6. 読み取れない項目は空文字にすること 7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要）  {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
       try {
         const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
@@ -657,25 +657,15 @@
       setTimeout(hideSt, 2000);
     }
 
-    // ── スプレッドシート送信 ──────────────────────────
+    // ── スプレッドシート送信（★GAS通信をスキップするテスト版） ──────────────────────────
     async function submitData() {
       document.getElementById('submitBtn').disabled = true;
-      showSt('loading', 'スプレッドシートに送信中...');
-      const payload   = collect();
-      payload._rank   = calcRank(payload);
-      payload._sentAt = new Date().toLocaleString('ja-JP');
-      try {
-        await fetch(GAS_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload),
-        });
-        showSt('success', ' 送信完了！スプレッドシートを確認してください');
-        setTimeout(doReset, 4000);
-      } catch (err) {
-        showSt('error', '送信エラー: ' + err.message);
-        document.getElementById('submitBtn').disabled = false;
-      }
+      showSt('loading', '【テストモード】スプレッドシートへの通信をスキップしています...');
+      
+      setTimeout(() => {
+        showSt('success', ' [テスト完了] 本来ならここでGASへデータ送信が行われます');
+        setTimeout(doReset, 3000);
+      }, 1500);
     }
   </script>
 
