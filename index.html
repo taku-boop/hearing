@@ -1,496 +1,732 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ヒアリング読取 | Cross Effect</title>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --accent:#e8441a;--dark:#111;--blue:#2563eb;--gray:#9ca3af;
-  --bg:#f2f2f7;--card:#fff;--border:#d1d5db;--text:#111;--sub:#6b7280;
-}
-body{font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ヒアリング読取 | Cross Effect</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --accent: #e8441a;
+      --dark: #111;
+      --blue: #2563eb;
+      --gray: #9ca3af;
+      --bg: #f2f2f7;
+      --card: #fff;
+      --border: #d1d5db;
+      --text: #111;
+      --sub: #6b7280;
+    }
+    body {
+      font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
 
-.hdr{background:var(--dark);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-.hdr .brand{font-size:10px;color:#888;letter-spacing:.1em;}
-.hdr h1{font-size:16px;font-weight:700;}
-.hdr-badge{font-size:10px;background:#e8441a;color:#fff;padding:3px 8px;border-radius:99px;}
+    /* ヘッダー */
+    .hdr {
+      background: var(--dark);
+      color: #fff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .hdr .brand {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: .1em;
+    }
+    .hdr h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
 
-.main{padding:16px;max-width:500px;margin:0 auto;}
+    /* メメインレイアウト */
+    .main {
+      padding: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
 
-.card{background:var(--card);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
-.card-lbl{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+    /* カードデザイン */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 14px;
+    }
 
-.upload-zone{border:2px dashed #ccc;border-radius:10px;padding:32px 20px;text-align:center;background:#fafafa;position:relative;cursor:pointer;transition:all .2s;}
-.upload-zone:active{border-color:var(--accent);background:#fff5f3;}
-.upload-zone input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;}
-.upload-icon{font-size:44px;display:block;margin-bottom:10px;}
-.upload-main{font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;}
-.upload-sub{font-size:13px;color:var(--sub);line-height:1.6;}
+    /* アップロードエリア */
+    .upload-zone {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 32px 20px;
+      text-align: center;
+      background: #fafafa;
+      position: relative;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .upload-zone:active {
+      border-color: var(--accent);
+      background: #fff5f3;
+    }
+    .upload-zone input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .upload-icon {
+      font-size: 44px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .upload-main {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .upload-sub {
+      font-size: 13px;
+      color: var(--sub);
+      line-height: 1.6;
+    }
 
-.preview-wrap{display:none;position:relative;}
-.preview-wrap img{width:100%;border-radius:10px;display:block;}
-.preview-clear{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    /* プレビュー */
+    .preview-wrap {
+      display: none;
+      position: relative;
+    }
+    .preview-wrap img {
+      width: 100%;
+      border-radius: 10px;
+      display: block;
+    }
+    .preview-clear {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,.7);
+      color: #fff;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-.btn{display:block;width:100%;padding:17px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;text-align:center;font-family:inherit;-webkit-appearance:none;letter-spacing:.02em;}
-.btn:active{filter:brightness(.9);}
-.btn:disabled{opacity:.4;pointer-events:none;}
-.btn-accent{background:var(--accent);color:#fff;}
-.btn-green{background:#16a34a;color:#fff;margin-bottom:10px;}
-.btn-outline{background:#fff;color:var(--dark);border:2px solid var(--border);font-size:14px;padding:13px;}
+    /* ボタン */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 17px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      font-family: inherit;
+      -webkit-appearance: none;
+      letter-spacing: .02em;
+    }
+    .btn:active {
+      filter: brightness(.9);
+    }
+    .btn:disabled {
+      opacity: .4;
+      pointer-events: none;
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-green {
+      background: #16a34a;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .btn-outline {
+      background: #fff;
+      color: var(--dark);
+      border: 2px solid var(--border);
+      font-size: 14px;
+      padding: 13px;
+    }
 
-.status{display:none;padding:14px 16px;border-radius:12px;font-size:14px;margin-bottom:14px;align-items:center;gap:12px;line-height:1.5;}
-.status.loading{display:flex;background:#eff6ff;color:#1d4ed8;}
-.status.success{display:flex;background:#f0fdf4;color:#166534;}
-.status.error{display:flex;background:#fff5f5;color:#b91c1c;}
-.spinner{width:22px;height:22px;flex-shrink:0;border:3px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
+    /* ステータス表示 */
+    .status {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .status.loading {
+      display: flex;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .status.success {
+      display: flex;
+      background: #f0fdf4;
+      color: #166534;
+    }
+    .status.error {
+      display: flex;
+      background: #fff5f5;
+      color: #b91c1c;
+    }
+    .spinner {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      border: 3px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
-/* ランク */
-.rank-box{display:flex;align-items:center;gap:16px;padding:18px;border-radius:14px;margin-bottom:14px;}
-.rank-box.ra{background:#fff5f3;border:2px solid var(--accent);}
-.rank-box.rb{background:#eff6ff;border:2px solid var(--blue);}
-.rank-box.rc{background:#f9fafb;border:2px solid var(--gray);}
-.rank-circle{width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;}
-.ra .rank-circle{background:var(--accent);}
-.rb .rank-circle{background:var(--blue);}
-.rc .rank-circle{background:var(--gray);}
-.rank-info strong{display:block;font-size:17px;font-weight:700;margin-bottom:4px;}
-.rank-info span{font-size:12px;color:var(--sub);line-height:1.5;}
+    /* ランク */
+    .rank-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .rank-box.ra { background: #fff5f3; border: 2px solid var(--accent); }
+    .rank-box.rb { background: #eff6ff; border: 2px solid var(--blue); }
+    .rank-box.rc { background: #f9fafb; border: 2px solid var(--gray); }
+    .rank-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .ra .rank-circle { background: var(--accent); }
+    .rb .rank-circle { background: var(--blue); }
+    .rc .rank-circle { background: var(--gray); }
+    .rank-info strong {
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .rank-info span {
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.5;
+    }
 
-/* フォーム */
-.sec-title{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;padding-bottom:10px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;}
-.field{margin-bottom:16px;}
-.field:last-child{margin-bottom:0;}
-.field label{display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:7px;}
+    /* フォーム要素 */
+    .sec-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 16px;
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    .field:last-child {
+      margin-bottom: 0;
+    }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #444;
+      margin-bottom: 7px;
+    }
+    .field input {
+      display: block;
+      width: 100%;
+      height: 52px;
+      padding: 0 14px;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 16px;
+      line-height: 52px;
+      color: #111;
+      background: #fff;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: manipulation;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,68,26,.2);
+    }
+    .field textarea {
+      display: block;
+      width: 100%;
+      min-height: 100px;
+      padding: 14px;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #111;
+      background: #fff;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      resize: vertical;
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: manipulation;
+    }
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,68,26,.2);
+    }
 
-/* ★編集できる入力欄★ */
-.field input{
-  display:block;
-  width:100%;
-  height:52px;
-  padding:0 14px;
-  border:2px solid #d1d5db;
-  border-radius:10px;
-  font-size:16px;
-  line-height:52px;
-  color:#111;
-  background:#fff;
-  font-family:inherit;
-  -webkit-appearance:none;
-  appearance:none;
-  -webkit-user-select:text;
-  user-select:text;
-  touch-action:manipulation;
-}
-.field input:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(232,68,26,.2);
-}
-.field textarea{
-  display:block;
-  width:100%;
-  min-height:100px;
-  padding:14px;
-  border:2px solid #d1d5db;
-  border-radius:10px;
-  font-size:16px;
-  line-height:1.6;
-  color:#111;
-  background:#fff;
-  font-family:inherit;
-  -webkit-appearance:none;
-  appearance:none;
-  resize:vertical;
-  -webkit-user-select:text;
-  user-select:text;
-  touch-action:manipulation;
-}
-.field textarea:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(232,68,26,.2);
-}
-
-.edit-banner{background:#fef9e7;border:1.5px solid #f6c90e;border-radius:12px;padding:14px 16px;font-size:14px;color:#7c5c00;margin-bottom:14px;line-height:1.7;}
-</style>
+    .edit-banner {
+      background: #fef9e7;
+      border: 1.5px solid #f6c90e;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: #7c5c00;
+      margin-bottom: 14px;
+      line-height: 1.7;
+    }
+  </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div><div class="brand">CROSS EFFECT</div><h1>ヒアリングシート読取</h1></div>
-  <button onclick="openCfg()" style="background:none;border:1px solid #555;color:#ccc;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;">⚙ 設定</button>
-</div>
-
-<div class="main">
-
-  <!-- アップロード -->
-  <div class="card">
-    <div class="card-lbl">📷 シートを撮影・アップロード</div>
-    <div class="upload-zone" id="uploadZone">
-      <input type="file" accept="image/*" capture="environment" id="fileInput" onchange="onFile(this)">
-      <span class="upload-icon">📄</span>
-      <div class="upload-main">タップして撮影 / 選択</div>
-      <div class="upload-sub">名刺付きシートを1枚で撮影<br>✅ 手書き文字もAIが読み取ります</div>
+  <div class="hdr">
+    <div>
+      <div class="brand">CROSS EFFECT</div>
+      <h1>ヒアリングシート読取</h1>
     </div>
-    <div class="preview-wrap" id="previewWrap">
-      <img id="previewImg" src="" alt="">
-      <button class="preview-clear" onclick="doReset()">✕</button>
+    <button onclick="openCfg()" style="background:none;border:1px solid #555;color:#ccc;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;">⚙ 設定</button>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="card-lbl">📷 シートを撮影・アップロード</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
+        <span class="upload-icon">📄</span>
+        <div class="upload-main">タップして撮影 / 選択</div>
+        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br>✅ 手書き文字もAIが読み取ります</div>
+      </div>
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" src="" alt="">
+        <button class="preview-clear" onclick="doReset()">✕</button>
+      </div>
+    </div>
+
+    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled>🔍 AIで読み取る</button>
+    <div style="height:12px;"></div>
+    <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
+
+    <div id="resultArea" style="display:none;">
+      <div id="rankDisplay"></div>
+      <div class="edit-banner">
+        ✏️ <strong>内容を修正できます</strong><br>
+        各項目の入力欄をタップするとキーボードが表示されます。<br>
+        AIの読み違いを直してから送信してください。
+      </div>
+
+      <div class="card">
+        <div class="sec-title">📇 名刺情報</div>
+        <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
+        <div class="field"><label>部署</label><input id="f_department" type="text"></div>
+        <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
+        <div class="field"><label>電話番号</label><input id="f_phone" type="text" inputmode="tel"></div>
+        <div class="field"><label>メールアドレス</label><input id="f_email" type="text" inputmode="email"></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">📋 基本情報</div>
+        <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
+        <div class="field"><label>日付</label><input id="f_date" type="text"></div>
+        <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">Q1 開発・試作の案件</div>
+        <div class="field"><label>チェック内容</label><input id="f_q1" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q1_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q2 スケジュール</div>
+        <div class="field"><label>チェック内容</label><input id="f_q2" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q2_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q3 ロット規模</div>
+        <div class="field"><label>チェック内容</label><input id="f_q3" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q3_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q4 使用材質</div>
+        <div class="field"><label>チェック内容</label><input id="f_q4" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q4_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q5 現在の課題</div>
+        <div class="field"><label>チェック内容</label><input id="f_q5" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q5_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q6 デザイン・設計</div>
+        <div class="field"><label>チェック内容</label><input id="f_q6" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q6_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q7 CG動画・VR</div>
+        <div class="field"><label>チェック内容</label><input id="f_q7" type="text"></div>
+        <div class="field"><label>その他（手書き）</label><input id="f_q7_other" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">Q8 工場見学</div>
+        <div class="field"><label>チェック内容</label><input id="f_q8" type="text"></div>
+        <div class="field"><label>希望時期（手書き）</label><input id="f_q8_time" type="text"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title">📝 備考・担当者メモ（手書き）</div>
+        <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容が入ります"></textarea></div>
+      </div>
+
+      <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
+      <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
     </div>
   </div>
 
-  <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled>🔍 AIで読み取る</button>
-  <div style="height:12px;"></div>
-  <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
-
-  <!-- 結果エリア -->
-  <div id="resultArea" style="display:none;">
-
-    <div id="rankDisplay"></div>
-
-    <div class="edit-banner">
-      ✏️ <strong>内容を修正できます</strong><br>
-      各項目の入力欄をタップするとキーボードが表示されます。<br>
-      AIの読み違いを直してから送信してください。
+  <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
+    <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
+      <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;">
+        設定 <button onclick="closeCfg()" style="background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#f0f9ff;border-radius:10px;padding:14px;font-size:13px;color:#0369a1;line-height:1.7;margin-bottom:18px;">
+        📌 <strong>Gemini APIキー取得方法（無料）</strong><br>
+        1. <a href="[https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)" target="_blank" style="color:#2563eb;">[aistudio.google.com/apikey](https://aistudio.google.com/apikey)</a> を開く<br>
+        2. Googleアカウントでログイン<br>
+        3. 「APIキーを作成」→「鍵をコピー」<br>
+        4. 下の欄に貼り付けて「保存する」
+      </div>
+      <div style="margin-bottom:6px;font-size:13px;font-weight:700;color:#444;">Gemini API Key</div>
+      <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..." style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
+      <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
+      <button onclick="saveCfg()" style="display:block;width:100%;padding:16px;background:#e8441a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">保存する</button>
+      <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
     </div>
-
-    <div class="card">
-      <div class="sec-title">📇 名刺情報</div>
-      <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
-      <div class="field"><label>部署</label><input id="f_department" type="text"></div>
-      <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
-      <div class="field"><label>電話番号</label><input id="f_phone" type="text" inputmode="tel"></div>
-      <div class="field"><label>メールアドレス</label><input id="f_email" type="text" inputmode="email"></div>
-    </div>
-
-    <div class="card">
-      <div class="sec-title">📋 基本情報</div>
-      <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
-      <div class="field"><label>日付</label><input id="f_date" type="text"></div>
-      <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
-    </div>
-
-    <div class="card">
-      <div class="sec-title">Q1 開発・試作の案件</div>
-      <div class="field"><label>チェック内容</label><input id="f_q1" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q1_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q2 スケジュール</div>
-      <div class="field"><label>チェック内容</label><input id="f_q2" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q2_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q3 ロット規模</div>
-      <div class="field"><label>チェック内容</label><input id="f_q3" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q3_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q4 使用材質</div>
-      <div class="field"><label>チェック内容</label><input id="f_q4" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q4_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q5 現在の課題</div>
-      <div class="field"><label>チェック内容</label><input id="f_q5" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q5_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q6 デザイン・設計</div>
-      <div class="field"><label>チェック内容</label><input id="f_q6" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q6_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q7 CG動画・VR</div>
-      <div class="field"><label>チェック内容</label><input id="f_q7" type="text"></div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q7_other" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">Q8 工場見学</div>
-      <div class="field"><label>チェック内容</label><input id="f_q8" type="text"></div>
-      <div class="field"><label>希望時期（手書き）</label><input id="f_q8_time" type="text"></div>
-    </div>
-    <div class="card">
-      <div class="sec-title">📝 備考・担当者メモ（手書き）</div>
-      <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容が入ります"></textarea></div>
-    </div>
-
-    <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
-    <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
-
   </div>
-</div>
 
-<script>
-// ═══════════════════════════════════════════════════
-//  固定設定
-// ═══════════════════════════════════════════════════
-const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-1.5-flash';
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1/models';
-// APIキーはlocalStorageに保存（HTMLには書かない）
-function getKey() { return localStorage.getItem('xef_gemini') || ''; }
-// ═══════════════════════════════════════════════════
+  <script>
+    const GAS_URL      = '[https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec](https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec)';
+    const GEMINI_MODEL = 'gemini-2.5-flash';
+    const GEMINI_API   = '[https://generativelanguage.googleapis.com/v1beta/models](https://generativelanguage.googleapis.com/v1beta/models)';
 
-let imgB64 = null, imgMime = 'image/jpeg';
+    function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
-// ── ファイル選択・圧縮 ────────────────────────────
-function onFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX = 1600;
-      let w = img.width, h = img.height;
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      imgB64 = dataUrl.split(',')[1];
-      imgMime = 'image/jpeg';
-      document.getElementById('previewImg').src = dataUrl;
-      document.getElementById('uploadZone').style.display  = 'none';
-      document.getElementById('previewWrap').style.display = 'block';
-      document.getElementById('analyzeBtn').disabled = false;
-      document.getElementById('resultArea').style.display  = 'none';
-      hideSt();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+    let imgB64 = null, imgMime = 'image/jpeg';
 
-function doReset() {
-  imgB64 = null;
-  document.getElementById('fileInput').value = '';
-  document.getElementById('uploadZone').style.display  = 'block';
-  document.getElementById('previewWrap').style.display = 'none';
-  document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('resultArea').style.display  = 'none';
-  hideSt();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ── ステータス ────────────────────────────────────
-function showSt(type, msg) {
-  const el = document.getElementById('status');
-  el.className = 'status ' + type;
-  document.getElementById('statusMsg').textContent = msg;
-  document.getElementById('spinner').style.display = type === 'loading' ? 'block' : 'none';
-}
-function hideSt() { document.getElementById('status').className = 'status'; }
-
-// ── ランク判定・表示 ──────────────────────────────
-function calcRank(d) {
-  const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
-  const hasPrj = /ある|定期的|今後/.test(q1);
-  const urgent = /大至急|3ヶ月/.test(q2);
-  const mid    = /6ヶ月|1年|未定/.test(q2);
-  const issue  = q5.length > 0 && !q5.includes('課題なし');
-  const visit  = /ぜひ|見学したい/.test(q8);
-  if (hasPrj && urgent)              return 'A';
-  if ((hasPrj && mid)||issue||visit) return 'B';
-  return 'C';
-}
-const RINFO = {
-  A:{ cls:'ra', label:'Aランク　今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
-  B:{ cls:'rb', label:'Bランク　継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク　情報提供のみ', desc:'案件なし・他業種・営業来訪' },
-};
-function renderRank(r) {
-  const i = RINFO[r];
-  document.getElementById('rankDisplay').innerHTML = `
-    <div class="rank-box ${i.cls}">
-      <div class="rank-circle">${r}</div>
-      <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
-    </div>`;
-}
-
-// ── AI読み取り ────────────────────────────────────
-async function analyze() {
-  const GEMINI_KEY = getKey();
-  if (!GEMINI_KEY) {
-    showSt('error', 'APIキーが未設定です。右上の⚙設定からキーを入力してください。');
-    return;
-  }
-  document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('resultArea').style.display = 'none';
-  showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
-
-  const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
-
-【絶対ルール — 違反厳禁】
-- 実際に写真に写っているチェック・文字のみを返すこと
-- チェックが入っていない選択肢は絶対に返さないこと
-- 名刺が写っていない場合、名刺欄は全て空文字にすること
-- 手書きで何も書かれていない欄は空文字にすること
-- 推測・補完・想像で内容を埋めることは絶対に禁止
-- シートが白紙・未記入の場合は全項目を空文字で返すこと
-- JSONのみを返すこと（説明文・コードブロック・前置き一切不要）
-
-【読み取りルール】
-- 名刺が貼付されている場合のみ名刺の情報を読み取る
-- 印刷された□に手書きで✓・○・×・塗りつぶし等が実際に入っている項目のみ返す
-- 「その他」欄に実際に手書きがある場合のみその内容を返す
-- 複数チェックはカンマ区切り
-
-{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
-
-  try {
-    const res = await fetch(
-      `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [
-            { inline_data: { mime_type: imgMime, data: imgB64 } },
-            { text: prompt }
-          ]}],
-          generationConfig: { temperature: 0 }
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      const msg = e?.error?.message || '';
-      if (msg.includes('not found') || msg.includes('見つからない')) {
-        throw new Error('AIモデルエラー。管理者に連絡してください。');
-      }
-      if (res.status === 400 || res.status === 403) {
-        throw new Error('APIキーに問題があります。管理者に連絡してください。');
-      }
-      throw new Error(msg || `エラー(${res.status})`);
+    // ファイル選択・圧縮
+    function onFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 1600;
+          let w = img.width, h = img.height;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          imgB64 = dataUrl.split(',')[1];
+          imgMime = 'image/jpeg';
+          document.getElementById('previewImg').src = dataUrl;
+          document.getElementById('uploadZone').style.display  = 'none';
+          document.getElementById('previewWrap').style.display = 'block';
+          document.getElementById('analyzeBtn').disabled = false;
+          document.getElementById('resultArea').style.display  = 'none';
+          hideSt();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
-    const json  = await res.json();
-    const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = raw.replace(/```[a-z]*\n?|```/g, '').trim();
+    function doReset() {
+      imgB64 = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('uploadZone').style.display  = 'block';
+      document.getElementById('previewWrap').style.display = 'none';
+      document.getElementById('analyzeBtn').disabled = true;
+      document.getElementById('resultArea').style.display  = 'none';
+      hideSt();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-    let data;
-    try { data = JSON.parse(clean); }
-    catch { throw new Error('AIの返答を解析できませんでした。もう一度試してください。'); }
+    // ステータス表示表示
+    function showSt(type, msg) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + type;
+      document.getElementById('statusMsg').textContent = msg;
+      document.getElementById('spinner').style.display = type === 'loading' ? 'block' : 'none';
+    }
+    function hideSt() { document.getElementById('status').className = 'status'; }
 
-    fill(data);
-    const rank = calcRank(data);
-    renderRank(rank);
+    // ランク判定
+    function calcRank(d) {
+      const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
+      const hasPrj = /ある|定定期|今後/.test(q1);
+      const urgent = /大至急|3ヶ月/.test(q2);
+      const mid    = /6ヶ月|1年|未定/.test(q2);
+      const issue  = q5.length > 0 && !q5.includes('課題なし');
+      const visit  = /ぜひ|見学したい/.test(q8);
+      if (hasPrj && urgent)              return 'A';
+      if ((hasPrj && mid)||issue||visit) return 'B';
+      return 'C';
+    }
+    
+    const RINFO = {
+      A: { cls:'ra', label:'Aランク 今すぐ対応', desc:'直近案件あり・大手開発者で案件見込み' },
+      B: { cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+      C: { cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+    };
+    
+    function renderRank(r) {
+      const i = RINFO[r];
+      document.getElementById('rankDisplay').innerHTML = `
+        <div class="rank-box ${i.cls}">
+          <div class="rank-circle">${r}</div>
+          <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
+        </div>`;
+    }
 
-    // iOS Safari バグ回避：100ms後に表示
-    setTimeout(() => {
-      document.getElementById('resultArea').style.display = 'block';
-      showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
-      setTimeout(() => {
-        document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-    }, 100);
+    // AI読み取り
+    async function analyze() {
+      const GEMINI_KEY = getKey();
+      if (!GEMINI_KEY) {
+        showSt('error', 'APIキーが未設定です。右上の⚙設定からキーを入力してください。');
+        return;
+      }
+      document.getElementById('analyzeBtn').disabled = true;
+      document.getElementById('resultArea').style.display = 'none';
+      showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-  } catch (err) {
-    showSt('error', '読み取りエラー: ' + err.message);
-  } finally {
-    document.getElementById('analyzeBtn').disabled = false;
-  }
-}
+      // 勝手な入力を防ぐ強力なプロンプト制約
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
 
-// ── フィールド入出力 ──────────────────────────────
-const FMAP = [
-  ['f_company','card_company'],['f_department','card_department'],
-  ['f_name','card_name'],['f_phone','card_phone'],['f_email','card_email'],
-  ['f_exhibition','exhibition'],['f_date','date'],['f_staff','staff'],
-  ['f_q1','q1'],['f_q1_other','q1_other'],
-  ['f_q2','q2'],['f_q2_other','q2_other'],
-  ['f_q3','q3'],['f_q3_other','q3_other'],
-  ['f_q4','q4'],['f_q4_other','q4_other'],
-  ['f_q5','q5'],['f_q5_other','q5_other'],
-  ['f_q6','q6'],['f_q6_other','q6_other'],
-  ['f_q7','q7'],['f_q7_other','q7_other'],
-  ['f_q8','q8'],['f_q8_time','q8_visit_time'],
-  ['f_memo','memo'],
-];
-function fill(d) {
-  FMAP.forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = d[key] || '';
-    el.removeAttribute('readonly');
-    el.removeAttribute('disabled');
-  });
-}
-function collect() {
-  const d = {};
-  FMAP.forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    d[key] = el ? el.value.trim() : '';
-  });
-  return d;
-}
+【最重要ルール：ハルシネーション（嘘・推測）の厳禁】
+1. 写真に「写っていない情報」「記載がない項目」「名刺が貼られていない欄」は、絶対に推測で埋めないでください。
+2. 印刷された選択肢（□など）に、チェック（✓、○、×、塗りつぶし等）が明確に入っていない質問項目は、絶対に文字を創作せず、必ず空文字列 "" にしてください。
+3. 手書きの「その他」欄や備考欄に何も書かれていない場合も、勝手に言葉を補填せず、必ず空文字列 "" にしてください。
+4. 確証がない情報はすべて無視し、空文字列 "" とすること。
 
-// ── 設定画面 ──────────────────────────────────────
-function openCfg() {
-  const k = getKey();
-  document.getElementById('s_key').value = k;
-  document.getElementById('keyStatus').textContent = k ? '✅ 設定済み' : '❌ 未設定';
-  document.getElementById('keyStatus').style.color = k ? '#166534' : '#b91c1c';
-  document.getElementById('cfgOverlay').style.display = 'flex';
-}
-function closeCfg() { document.getElementById('cfgOverlay').style.display = 'none'; }
-function saveCfg() {
-  const k = document.getElementById('s_key').value.trim();
-  if (!k) { alert('APIキーを入力してください'); return; }
-  localStorage.setItem('xef_gemini', k);
-  closeCfg();
-  showSt('success', '✅ APIキーを保存しました');
-  setTimeout(hideSt, 2000);
-}
-</script>
+【基本読取ルール】
+1. 右上に名刺が貼付されている場合は名刺の文字を正確に読み取ること（名刺がなければ関連項目はすべて空文字にすること）。
+2. チェックが入っている選択肢のテキストを抽出すること。複数選択はカンマ区切りで列記すること。
+3. 日本語の手書き文字を丁寧に読み取ること。`;
 
-<!-- 設定モーダル -->
-<div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
-  <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
-    <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
-    <div style="font-size:17px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;">
-      設定 <button onclick="closeCfg()" style="background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;">✕</button>
-    </div>
-    <div style="background:#f0f9ff;border-radius:10px;padding:14px;font-size:13px;color:#0369a1;line-height:1.7;margin-bottom:18px;">
-      📌 <strong>Gemini APIキー取得方法（無料）</strong><br>
-      1. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;">aistudio.google.com/apikey</a> を開く<br>
-      2. Googleアカウントでログイン<br>
-      3. 「APIキーを作成」→「鍵をコピー」<br>
-      4. 下の欄に貼り付けて「保存する」
-    </div>
-    <div style="margin-bottom:6px;font-size:13px;font-weight:700;color:#444;">Gemini API Key</div>
-    <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..."
-      style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
-    <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
-    <button onclick="saveCfg()" style="display:block;width:100%;padding:16px;background:#e8441a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">保存する</button>
-    <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
-  </div>
-</div>
-async function submitData() {
-  document.getElementById('submitBtn').disabled = true;
-  showSt('loading', 'スプレッドシートに送信中...');
-  const payload   = collect();
-  payload._rank   = calcRank(payload);
-  payload._sentAt = new Date().toLocaleString('ja-JP');
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload),
-    });
-    showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
-    setTimeout(doReset, 4000);
-  } catch (err) {
-    showSt('error', '送信エラー: ' + err.message);
-    document.getElementById('submitBtn').disabled = false;
-  }
-}
-</script>
+      try {
+        const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: imgMime, data: imgB64 } },
+                { text: prompt }
+              ]
+            }],
+            // JSONで確定出力させ、フォーマットエラーを防ぐ設定
+            generationConfig: {
+              response_mime_type: "application/json",
+              response_schema: {
+                type: "OBJECT",
+                properties: {
+                  card_company: { type: "STRING" }, card_department: { type: "STRING" }, card_name: { type: "STRING" },
+                  card_phone: { type: "STRING" }, card_email: { type: "STRING" }, date: { type: "STRING" },
+                  staff: { type: "STRING" }, exhibition: { type: "STRING" }, q1: { type: "STRING" },
+                  q1_other: { type: "STRING" }, q2: { type: "STRING" }, q2_other: { type: "STRING" },
+                  q3: { type: "STRING" }, q3_other: { type: "STRING" }, q4: { type: "STRING" },
+                  q4_other: { type: "STRING" }, q5: { type: "STRING" }, q5_other: { type: "STRING" },
+                  q6: { type: "STRING" }, q6_other: { type: "STRING" }, q7: { type: "STRING" },
+                  q7_other: { type: "STRING" }, q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
+                  memo: { type: "STRING" }
+                },
+                required: [
+                  "card_company", "card_department", "card_name", "card_phone", "card_email", "date", "staff", "exhibition",
+                  "q1", "q1_other", "q2", "q2_other", "q3", "q3_other", "q4", "q4_other", "q5", "q5_other", "q6", "q6_other",
+                  "q7", "q7_other", "q8", "q8_visit_time", "memo"
+                ]
+              }
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          const msg = e?.error?.message || '';
+          if (res.status === 429 || msg.includes('high demand')) {
+            throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度お試しください。');
+          }
+          throw new Error(msg || `エラー(${res.status})`);
+        }
+
+        const json = await res.json();
+        const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        
+        let data;
+        try { data = JSON.parse(raw); }
+        catch { throw new Error('AIの返答データを正しく解析できませんでした。もう一度お試しください。'); }
+
+        fill(data);
+        const rank = calcRank(data);
+        renderRank(rank);
+
+        setTimeout(() => {
+          document.getElementById('resultArea').style.display = 'block';
+          showSt('success', '✅ 読み取り完了！内容を確認・修正して送信してください');
+          setTimeout(() => {
+            document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 200);
+        }, 100);
+
+      } catch (err) {
+        showSt('error', '読み取りエラー: ' + err.message);
+      } finally {
+        document.getElementById('analyzeBtn').disabled = false;
+      }
+    }
+
+    // フィールド入出力
+    const FMAP = [
+      ['f_company','card_company'], ['f_department','card_department'],
+      ['f_name','card_name'], ['f_phone','card_phone'], ['f_email','card_email'],
+      ['f_exhibition','exhibition'], ['f_date','date'], ['f_staff','staff'],
+      ['f_q1','q1'], ['f_q1_other','q1_other'],
+      ['f_q2','q2'], ['f_q2_other','q2_other'],
+      ['f_q3','q3'], ['f_q3_other','q3_other'],
+      ['f_q4','q4'], ['f_q4_other','q4_other'],
+      ['f_q5','q5'], ['f_q5_other','q5_other'],
+      ['f_q6','q6'], ['f_q6_other','q6_other'],
+      ['f_q7','q7'], ['f_q7_other','q7_other'],
+      ['f_q8','q8'], ['f_q8_time','q8_visit_time'],
+      ['f_memo','memo'],
+    ];
+
+    function fill(d) {
+      FMAP.forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = d[key] || '';
+        el.removeAttribute('readonly');
+        el.removeAttribute('disabled');
+      });
+    }
+
+    function collect() {
+      const d = {};
+      FMAP.forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        d[key] = el ? el.value.trim() : '';
+      });
+      return d;
+    }
+
+    // 設定画面
+    function openCfg() {
+      const k = getKey();
+      document.getElementById('s_key').value = k;
+      document.getElementById('keyStatus').textContent = k ? '✅ 設定済み' : '❌ 未設定';
+      document.getElementById('keyStatus').style.color = k ? '#166534' : '#b91c1c';
+      document.getElementById('cfgOverlay').style.display = 'flex';
+    }
+    function closeCfg() { document.getElementById('cfgOverlay').style.display = 'none'; }
+    function saveCfg() {
+      const k = document.getElementById('s_key').value.trim();
+      if (!k) { alert('APIキーを入力してください'); return; }
+      localStorage.setItem('xef_gemini', k);
+      closeCfg();
+      showSt('success', '✅ APIキーを保存しました');
+      setTimeout(hideSt, 2000);
+    }
+
+    // スプレッドシート送信
+    async function submitData() {
+      document.getElementById('submitBtn').disabled = true;
+      showSt('loading', 'スプレッドシートに送信中...');
+      const payload   = collect();
+      payload._rank   = calcRank(payload);
+      payload._sentAt = new Date().toLocaleString('ja-JP');
+      try {
+        await fetch(GAS_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload),
+        });
+        showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
+        setTimeout(doReset, 4000);
+      } catch (err) {
+        showSt('error', '送信エラー: ' + err.message);
+        document.getElementById('submitBtn').disabled = false;
+      }
+    }
+  </script>
 </body>
 </html>
