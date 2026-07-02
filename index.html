@@ -449,10 +449,10 @@
 
   <script>
     // ═══════════════════════════════════════════════════
-    //  固定設定（確実に開放されている安定無料枠モデル名に復元）
+    //  最新の正式モデル名 gemini-2.5-flash に復元
     // ═══════════════════════════════════════════════════
     const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-    const GEMINI_MODEL = 'gemini-1.5-flash';
+    const GEMINI_MODEL = 'gemini-2.5-flash';
     const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     function getKey() { return localStorage.getItem('xef_gemini') || ''; }
@@ -543,7 +543,7 @@
         </div>`;
     }
 
-    // ── AI読み取り（プロンプトの位置指定命令を「左上」に完全修正・最強化） ────────────────
+    // ── AI読み取り（モデル名を2.5に指定。指示を「左上」に完全同期） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -553,7 +553,7 @@
       document.getElementById('analyzeBtn').disabled = true;
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-      // 「左上にある名刺」を確実にロックオンさせるための超厳格なルール命令
+      // 名刺の物理的な貼付位置を「左上」に完全一致させた高精度プロンプト
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。 
 【必ず守るルール】 
 1. 写真の【左上】にホチキス留め、または貼付されている「名刺」の文字列を最優先ですべて正確に読み取ること（会社名、部署、氏名、電話番号、メールアドレスを絶対に逃さないこと）
