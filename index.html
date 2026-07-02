@@ -153,6 +153,10 @@
       opacity: .4;
       pointer-events: none;
     }
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
     .btn-green {
       background: #16a34a;
       color: #fff;
@@ -188,6 +192,36 @@
       animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ランク */
+    .rank-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .rank-box.ra { background: #fff5f3; border: 2px solid var(--accent); }
+    .rank-box.rb { background: #eff6ff; border: 2px solid var(--blue); }
+    .rank-box.rc { background: #f9fafb; border: 2px solid var(--gray); }
+    .rank-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .ra .rank-circle { background: var(--accent); }
+    .rb .rank-circle { background: var(--blue); }
+    .rc .rank-circle { background: var(--gray); }
+    .rank-info strong { display: block; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .rank-info span { font-size: 12px; color: var(--sub); line-height: 1.5; }
 
     /* フォーム */
     .sec-title {
@@ -240,7 +274,7 @@
       resize: vertical;
     }
 
-    /* 選択肢ボタンスタイル */
+    /* タップ用の大きな選択ボタン */
     .select-group {
       display: flex;
       flex-wrap: wrap;
@@ -258,12 +292,12 @@
     }
     .select-label {
       display: block;
-      padding: 10px 16px;
+      padding: 11px 18px;
       background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       user-select: none;
       transition: all 0.15s;
@@ -273,6 +307,16 @@
       color: #fff;
       border-color: var(--accent);
     }
+    .edit-banner {
+      background: #fef9e7;
+      border: 1.5px solid #f6c90e;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: #7c5c00;
+      margin-bottom: 14px;
+      line-height: 1.7;
+    }
   </style>
 </head>
 <body>
@@ -280,18 +324,19 @@
   <div class="hdr">
     <div>
       <div class="brand">CROSS EFFECT</div>
-      <h1>ヒアリングシート入力</h1>
+      <h1>ヒアリングシート読取</h1>
     </div>
+    <button onclick="openCfg()" style="background:none;border:1px solid #555;color:#ccc;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;"> 設定</button>
   </div>
 
   <div class="main">
     <div class="card">
-      <div class="card-lbl"> シートを確認しながら手動入力</div>
+      <div class="card-lbl"> シートを撮影・アップロード</div>
       <div class="upload-zone" id="uploadZone">
         <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
         <span class="upload-icon"></span>
-        <div class="upload-main">写真をセット（任意）</div>
-        <div class="upload-sub">画像をセットすると、下にフォームがすぐ展開します。<br>タップ選択で素早く入力可能です。</div>
+        <div class="upload-main">タップして撮影 / 選択</div>
+        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 【左上】の名刺情報をAIが最優先で自動入力します</div>
       </div>
       <div class="preview-wrap" id="previewWrap">
         <img id="previewImg" src="" alt="">
@@ -299,12 +344,19 @@
       </div>
     </div>
 
+    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで読み取る</button>
+    <div style="height:12px;"></div>
     <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
     <div id="resultArea" style="display:none;">
-      
+      <div id="rankDisplay"></div>
+      <div class="edit-banner">
+        <strong>内容を修正できます</strong><br>
+        AIの読み取り結果が反映されます。ラジオボタンの選択違いや、名刺の誤字を手動で直してから送信してください。
+      </div>
+
       <div class="card">
-        <div class="sec-title"> 名刺情報</div>
+        <div class="sec-title"> 【左上固定】名刺情報</div>
         <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
         <div class="field"><label>部署</label><input id="f_department" type="text"></div>
         <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
@@ -322,13 +374,13 @@
       <div class="card">
         <div class="sec-title">Q1 開発・試作の案件</div>
         <div class="field">
-          <label>チェック内容（複数選択可）</label>
+          <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q1" value="ある"> <span class="select-label">ある</span></label>
-            <label class="select-item"><input type="checkbox" name="q1" value="近々あり"> <span class="select-label">近々あり</span></label>
-            <label class="select-item"><input type="checkbox" name="q1" value="定期的"> <span class="select-label">定定期</span></label>
-            <label class="select-item"><input type="checkbox" name="q1" value="今後ありうる"> <span class="select-label">今後</span></label>
-            <label class="select-item"><input type="checkbox" name="q1" value="なし"> <span class="select-label">なし</span></label>
+            <label class="select-item"><input type="radio" name="q1" value="ある" id="q1_ある"> <span class="select-label">ある</span></label>
+            <label class="select-item"><input type="radio" name="q1" value="近々あり" id="q1_近々あり"> <span class="select-label">近々あり</span></label>
+            <label class="select-item"><input type="radio" name="q1" value="定期的" id="q1_定期的"> <span class="select-label">定定期</span></label>
+            <label class="select-item"><input type="radio" name="q1" value="今後ありうる" id="q1_今後ありうる"> <span class="select-label">今後</span></label>
+            <label class="select-item"><input type="radio" name="q1" value="なし" id="q1_なし"> <span class="select-label">なし</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q1_other" type="text"></div>
@@ -337,13 +389,13 @@
       <div class="card">
         <div class="sec-title">Q2 スケジュール</div>
         <div class="field">
-          <label>チェック内容（複数選択可）</label>
+          <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q2" value="大至急"> <span class="select-label">大至急</span></label>
-            <label class="select-item"><input type="checkbox" name="q2" value="3ヶ月以内"> <span class="select-label">3ヶ月内</span></label>
-            <label class="select-item"><input type="checkbox" name="q2" value="6ヶ月以内"> <span class="select-label">6ヶ月内</span></label>
-            <label class="select-item"><input type="checkbox" name="q2" value="1年以内"> <span class="select-label">1年内</span></label>
-            <label class="select-item"><input type="checkbox" name="q2" value="未定"> <span class="select-label">未定</span></label>
+            <label class="select-item"><input type="radio" name="q2" value="大至急" id="q2_大至急"> <span class="select-label">大至急</span></label>
+            <label class="select-item"><input type="radio" name="q2" value="3ヶ月以内" id="q2_3ヶ月以内"> <span class="select-label">3ヶ月内</span></label>
+            <label class="select-item"><input type="radio" name="q2" value="6ヶ月以内" id="q2_6ヶ月以内"> <span class="select-label">6ヶ月内</span></label>
+            <label class="select-item"><input type="radio" name="q2" value="1年以内" id="q2_1年以内"> <span class="select-label">1年内</span></label>
+            <label class="select-item"><input type="radio" name="q2" value="未定" id="q2_未定"> <span class="select-label">未定</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q2_other" type="text"></div>
@@ -352,11 +404,11 @@
       <div class="card">
         <div class="sec-title">Q3 ロット規模</div>
         <div class="field">
-          <label>チェック内容（複数選択可）</label>
+          <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q3" value="試作のみ(1-数個)"> <span class="select-label">試作のみ</span></label>
-            <label class="select-item"><input type="checkbox" name="q3" value="小ロット(数十-数百)"> <span class="select-label">小ロット</span></label>
-            <label class="select-item"><input type="checkbox" name="q3" value="量産試作(数千-)"> <span class="select-label">量産試作</span></label>
+            <label class="select-item"><input type="radio" name="q3" value="試作のみ(1-数個)" id="q3_試作のみ(1-数個)"> <span class="select-label">試作のみ</span></label>
+            <label class="select-item"><input type="radio" name="q3" value="小ロット(数十-数百)" id="q3_小ロット(数十-数百)"> <span class="select-label">小ロット</span></label>
+            <label class="select-item"><input type="radio" name="q3" value="量産試作(数千-)" id="q3_量産試作(数千-)"> <span class="select-label">量産試作</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q3_other" type="text"></div>
@@ -365,14 +417,14 @@
       <div class="card">
         <div class="sec-title">Q4 使用材質</div>
         <div class="field">
-          <label>チェック内容（複数選択可）</label>
+          <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q4" value="汎用プラスチック"> <span class="select-label">汎用プラ</span></label>
-            <label class="select-item"><input type="checkbox" name="q4" value="エンプラ"> <span class="select-label">エンプラ</span></label>
-            <label class="select-item"><input type="checkbox" name="q4" value="スーパーエンプラ"> <span class="select-label">超エンプラ</span></label>
-            <label class="select-item"><input type="checkbox" name="q4" value="透明樹脂"> <span class="select-label">透明樹脂</span></label>
-            <label class="select-item"><input type="checkbox" name="q4" value="ゴム・エラストマー"> <span class="select-label">ゴム系</span></label>
-            <label class="select-item"><input type="checkbox" name="q4" value="金属"> <span class="select-label">金属</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="汎用プラスチック" id="q4_汎用プラスチック"> <span class="select-label">汎用プラ</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="エンプラ" id="q4_エンプラ"> <span class="select-label">エンプラ</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="スーパーエンプラ" id="q4_スーパーエンプラ"> <span class="select-label">超エンプラ</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="透明樹脂" id="q4_透明樹脂"> <span class="select-label">透明樹脂</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="ゴム・エラストマー" id="q4_ゴム・エラストマー"> <span class="select-label">ゴム系</span></label>
+            <label class="select-item"><input type="radio" name="q4" value="金属" id="q4_金属"> <span class="select-label">金属</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q4_other" type="text"></div>
@@ -381,13 +433,13 @@
       <div class="card">
         <div class="sec-title">Q5 現在の課題</div>
         <div class="field">
-          <label>チェック内容（複数選択可）</label>
+          <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q5" value="納期短縮"> <span class="select-label">納期短縮</span></label>
-            <label class="select-item"><input type="checkbox" name="q5" value="コスト削減"> <span class="select-label">コスト削減</span></label>
-            <label class="select-item"><input type="checkbox" name="q5" value="品質・精度向上"> <span class="select-label">品質向上</span></label>
-            <label class="select-item"><input type="checkbox" name="q5" value="形状・設計相談"> <span class="select-label">設計相談</span></label>
-            <label class="select-item"><input type="checkbox" name="q5" value="課題なし"> <span class="select-label">課題なし</span></label>
+            <label class="select-item"><input type="radio" name="q5" value="納期短縮" id="q5_納期短縮"> <span class="select-label">納期短縮</span></label>
+            <label class="select-item"><input type="radio" name="q5" value="コスト削減" id="q5_コスト削減"> <span class="select-label">コスト削減</span></label>
+            <label class="select-item"><input type="radio" name="q5" value="品質・精度向上" id="q5_品質・精度向上"> <span class="select-label">品質向上</span></label>
+            <label class="select-item"><input type="radio" name="q5" value="形状・設計相談" id="q5_形状・設計相談"> <span class="select-label">設計相談</span></label>
+            <label class="select-item"><input type="radio" name="q5" value="課題なし" id="q5_課題なし"> <span class="select-label">課題なし</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q5_other" type="text"></div>
@@ -398,9 +450,9 @@
         <div class="field">
           <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q6" value="社内で対応可能"> <span class="select-label">社内対応可</span></label>
-            <label class="select-item"><input type="checkbox" name="q6" value="外注を検討中"> <span class="select-label">外注検討</span></label>
-            <label class="select-item"><input type="checkbox" name="q6" value="相談したい"> <span class="select-label">相談したい</span></label>
+            <label class="select-item"><input type="radio" name="q6" value="社内で対応可能" id="q6_社内で対応可能"> <span class="select-label">社内対応可</span></label>
+            <label class="select-item"><input type="radio" name="q6" value="外注を検討中" id="q6_外注を検討中"> <span class="select-label">外注検討</span></label>
+            <label class="select-item"><input type="radio" name="q6" value="相談したい" id="q6_相談したい"> <span class="select-label">相談したい</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q6_other" type="text"></div>
@@ -411,9 +463,9 @@
         <div class="field">
           <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q7" value="興味あり"> <span class="select-label">興味あり</span></label>
-            <label class="select-item"><input type="checkbox" name="q7" value="必要性を感じている"> <span class="select-label">必要性あり</span></label>
-            <label class="select-item"><input type="checkbox" name="q7" value="予定なし"> <span class="select-label">予定なし</span></label>
+            <label class="select-item"><input type="radio" name="q7" value="興味あり" id="q7_興味あり"> <span class="select-label">興味あり</span></label>
+            <label class="select-item"><input type="radio" name="q7" value="必要性を感じている" id="q7_必要性を感じている"> <span class="select-label">必要性あり</span></label>
+            <label class="select-item"><input type="radio" name="q7" value="予定なし" id="q7_予定なし"> <span class="select-label">予定なし</span></label>
           </div>
         </div>
         <div class="field"><label>その他（手書き）</label><input id="f_q7_other" type="text"></div>
@@ -424,9 +476,9 @@
         <div class="field">
           <label>チェック内容</label>
           <div class="select-group">
-            <label class="select-item"><input type="checkbox" name="q8" value="ぜひ見学したい"> <span class="select-label">ぜひ見学</span></label>
-            <label class="select-item"><input type="checkbox" name="q8" value="機会があれば"> <span class="select-label">機会あれば</span></label>
-            <label class="select-item"><input type="checkbox" name="q8" value="希望しない"> <span class="select-label">希望しない</span></label>
+            <label class="select-item"><input type="radio" name="q8" value="ぜひ見学したい" id="q8_ぜひ見学したい"> <span class="select-label">ぜひ見学</span></label>
+            <label class="select-item"><input type="radio" name="q8" value="機会があれば" id="q8_機会があれば"> <span class="select-label">機会あれば</span></label>
+            <label class="select-item"><input type="radio" name="q8" value="希望しない" id="q8_希望しない"> <span class="select-label">希望しない</span></label>
           </div>
         </div>
         <div class="field"><label>希望時期（手書き）</label><input id="f_q8_time" type="text"></div>
@@ -434,7 +486,7 @@
 
       <div class="card">
         <div class="sec-title"> 備考・担当者メモ（手書き）</div>
-        <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容を入力してください"></textarea></div>
+        <div class="field"><textarea id="f_memo" placeholder="手書きメモの内容が入ります"></textarea></div>
       </div>
 
       <button class="btn btn-green" id="submitBtn" onclick="submitData()"> スプレッドシートに送信</button>
@@ -443,31 +495,53 @@
   </div>
 
   <script>
+    const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+    const GEMINI_MODEL = 'gemini-2.5-flash';
+    const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+    function getKey() { return localStorage.getItem('xef_gemini') || ''; }
+
+    let imgB64 = null, imgMime = 'image/jpeg';
+
     function onFile(input) {
       const file = input.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = e => {
-        document.getElementById('previewImg').src = e.target.result;
-        document.getElementById('uploadZone').style.display  = 'none';
-        document.getElementById('previewWrap').style.display = 'block';
-        document.getElementById('resultArea').style.display  = 'block';
-        hideSt();
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 1600;
+          let w = img.width, h = img.height;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          imgB64 = dataUrl.split(',')[1];
+          imgMime = 'image/jpeg';
+          document.getElementById('previewImg').src = dataUrl;
+          document.getElementById('uploadZone').style.display  = 'none';
+          document.getElementById('previewWrap').style.display = 'block';
+          document.getElementById('analyzeBtn').disabled = false;
+          
+          document.getElementById('resultArea').style.display  = 'block';
+          hideSt();
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    // 起動時、即入力できるように最初から表示させる場合はここを実行
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById('resultArea').style.display = 'block';
-    });
-
     function doReset() {
+      imgB64 = null;
       document.getElementById('fileInput').value = '';
       document.getElementById('uploadZone').style.display  = 'block';
       document.getElementById('previewWrap').style.display = 'none';
+      document.getElementById('analyzeBtn').disabled = true;
+      document.getElementById('resultArea').style.display  = 'none';
       
-      // テキスト・エリアのリセット
+      // テキストクリア
       ['f_company','f_department','f_name','f_phone','f_email','f_exhibition','f_date','f_staff',
        'f_q1_other','f_q2_other','f_q3_other','f_q4_other','f_q5_other','f_q6_other','f_q7_other','f_q8_time','f_memo'
       ].forEach(id => {
@@ -475,9 +549,11 @@
         if (el) el.value = '';
       });
 
-      // チェックボックスの一括解除
-      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-      document.getElementById('submitBtn').disabled = false;
+      // ラジオボタンクリア
+      document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
+      document.getElementById('rankDisplay').innerHTML = '';
+      document.getElementById('submitBtn').disabled = false; 
+      
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -490,11 +566,9 @@
     }
     function hideSt() { document.getElementById('status').className = 'status'; }
 
-    // タップ選択された値をカンマ区切りで回収する関数
-    function getSelectedValues(name) {
-      const vals = [];
-      document.querySelectorAll(`input[name="${name}"]:checked`).forEach(cb => vals.push(cb.value));
-      return vals.join(', ');
+    function getSelectedValue(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : '';
     }
 
     function collect() {
@@ -507,47 +581,165 @@
         exhibition:      document.getElementById('f_exhibition').value.trim(),
         date:            document.getElementById('f_date').value.trim(),
         staff:           document.getElementById('f_staff').value.trim(),
-        q1:              getSelectedValues('q1'),
+        q1:              getSelectedValue('q1'),
         q1_other:        document.getElementById('f_q1_other').value.trim(),
-        q2:              getSelectedValues('q2'),
+        q2:              getSelectedValue('q2'),
         q2_other:        document.getElementById('f_q2_other').value.trim(),
-        q3:              getSelectedValues('q3'),
+        q3:              getSelectedValue('q3'),
         q3_other:        document.getElementById('f_q3_other').value.trim(),
-        q4:              getSelectedValues('q4'),
+        q4:              getSelectedValue('q4'),
         q4_other:        document.getElementById('f_q4_other').value.trim(),
-        q5:              getSelectedValues('q5'),
+        q5:              getSelectedValue('q5'),
         q5_other:        document.getElementById('f_q5_other').value.trim(),
-        q6:              getSelectedValues('q6'),
+        q6:              getSelectedValue('q6'),
         q6_other:        document.getElementById('f_q6_other').value.trim(),
-        q7:              getSelectedValues('q7'),
+        q7:              getSelectedValue('q7'),
         q7_other:        document.getElementById('f_q7_other').value.trim(),
-        q8:              getSelectedValues('q8'),
+        q8:              getSelectedValue('q8'),
         q8_visit_time:   document.getElementById('f_q8_time').value.trim(),
         memo:            document.getElementById('f_memo').value.trim()
       };
     }
 
-    // 簡易的なランク自動判定（選択されたボタンを元に計算）
-    function calcRank(payload) {
-      const hasPrj = /ある|近々|定定期/.test(payload.q1);
-      const urgent = /大至急|3ヶ月/.test(payload.q2);
-      const mid    = /6ヶ月|1年|未定/.test(payload.q2);
-      const issue  = payload.q5.length > 0 && !payload.q5.includes('課題なし');
-      const visit  = /ぜひ見学/.test(payload.q8);
-      if (hasPrj && urgent) return 'A';
-      if ((hasPrj && mid) || issue || visit) return 'B';
+    function calcRank(d) {
+      const hasPrj = /ある|近々|定定期/.test(d.q1);
+      const urgent = /大至急|3ヶ月/.test(d.q2);
+      const mid    = /6ヶ月|1年|未定/.test(d.q2);
+      const issue  = d.q5.length > 0 && !d.q5.includes('課題なし');
+      const visit  = /ぜひ見学/.test(d.q8);
+      if (hasPrj && urgent)              return 'A';
+      if ((hasPrj && mid)||issue||visit) return 'B';
       return 'C';
+    }
+    const RINFO = {
+      A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+      B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+      C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+    };
+    function renderRank(r) {
+      const i = RINFO[r];
+      document.getElementById('rankDisplay').innerHTML = `
+        <div class="rank-box ${i.cls}">
+          <div class="rank-circle">${r}</div>
+          <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
+        </div>`;
+    }
+
+    // ── 最強AI読み取り（2.5安定化通信 ＋ 左上名刺ターゲット固定） ────────────────
+    async function analyze() {
+      const GEMINI_KEY = getKey();
+      if (!GEMINI_KEY) {
+        showSt('error', 'APIキーが未設定です。右上の設定からキーを入力してください。');
+        return;
+      }
+      document.getElementById('analyzeBtn').disabled = true;
+      showSt('loading', 'AIが左上の名刺と手書き項目を解析中...（10〜20秒）');
+
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
+【必ず守る最優先ルール】
+1. 写真の【左上】にホチキス留め、または貼付されている「名刺」の文字列を完璧にスキャンし、会社名、部署、氏名、電話番号、メールアドレスを1文字のミスもなく正確に抽出してください。
+2. 印刷された□に手書きで✓や○が入っている選択肢、記述式の「その他」欄、備考欄の手書き日本語を丁寧に読み取ってください。JSON形式のみで返却すること。`;
+
+      try {
+        const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [
+              { inline_data: { mime_type: imgMime, data: imgB64 } },
+              { text: prompt }
+            ]}],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  card_company: { type: "STRING" }, card_department: { type: "STRING" },
+                  card_name: { type: "STRING" }, card_phone: { type: "STRING" }, card_email: { type: "STRING" },
+                  date: { type: "STRING" }, staff: { type: "STRING" }, exhibition: { type: "STRING" },
+                  q1: { type: "STRING" }, q1_other: { type: "STRING" },
+                  q2: { type: "STRING" }, q2_other: { type: "STRING" },
+                  q3: { type: "STRING" }, q3_other: { type: "STRING" },
+                  q4: { type: "STRING" }, q4_other: { type: "STRING" },
+                  q5: { type: "STRING" }, q5_other: { type: "STRING" },
+                  q6: { type: "STRING" }, q6_other: { type: "STRING" },
+                  q7: { type: "STRING" }, q7_other: { type: "STRING" },
+                  q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
+                  memo: { type: "STRING" }
+                }
+              }
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          const msg = e?.error?.message || '';
+          if (res.status === 429 || msg.includes('high demand')) {
+            throw new Error('Googleの無料枠制限（1分間に2枚まで）に達しました。少し待って押し直してください。');
+          }
+          throw new Error(msg || `エラー(${res.status})`);
+        }
+
+        const json = await response.json();
+        const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const data = JSON.parse(rawText.trim());
+
+        // テキストフォームの自動入力
+        document.getElementById('f_company').value    = data.card_company || '';
+        document.getElementById('f_department').value = data.card_department || '';
+        document.getElementById('f_name').value       = data.card_name || '';
+        document.getElementById('f_phone').value      = data.card_phone || '';
+        document.getElementById('f_email').value      = data.card_email || '';
+        document.getElementById('f_exhibition').value = data.exhibition || '';
+        document.getElementById('f_date').value       = data.date || '';
+        document.getElementById('f_staff').value      = data.staff || '';
+        document.getElementById('f_q1_other').value   = data.q1_other || '';
+        document.getElementById('f_q2_other').value   = data.q2_other || '';
+        document.getElementById('f_q3_other').value   = data.q3_other || '';
+        document.getElementById('f_q4_other').value   = data.q4_other || '';
+        document.getElementById('f_q5_other').value   = data.q5_other || '';
+        document.getElementById('f_q6_other').value   = data.q6_other || '';
+        document.getElementById('f_q7_other').value   = data.q7_other || '';
+        document.getElementById('f_q8_time').value    = data.q8_visit_time || '';
+        document.getElementById('f_memo').value       = data.memo || '';
+
+        // ラジオボタンの自動チェック
+        ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'].forEach(key => {
+          if (data[key]) {
+            // 完全一致または部分一致する項目を探して自動でチェック
+            const rb = Array.from(document.querySelectorAll(`input[name="${key}"]`)).find(input => 
+              data[key].includes(input.value) || input.value.includes(data[key])
+            );
+            if (rb) rb.checked = true;
+          }
+        });
+
+        const payload = collect();
+        const rank = calcRank(payload);
+        renderRank(rank);
+
+        showSt('success', ' AI読み取り完了！内容を確認して送信してください');
+        setTimeout(() => {
+          document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+      } catch (err) {
+        showSt('error', 'AI読取エラー: ' + err.message + ' (このままタップ・手動入力して送信可能です)');
+      } finally {
+        document.getElementById('analyzeBtn').disabled = false;
+      }
     }
 
     async function submitData() {
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
-      
       const payload   = collect();
       payload._rank   = calcRank(payload);
       payload._sentAt = new Date().toLocaleString('ja-JP');
-      
       try {
         await fetch(GAS_URL, {
           method: 'POST', mode: 'no-cors',
@@ -555,12 +747,34 @@
           body: JSON.stringify(payload),
         });
         showSt('success', ' 送信完了！スプレッドシートを確認してください');
-        setTimeout(doReset, 3000);
+        setTimeout(doReset, 4000);
       } catch (err) {
         showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
         btn.disabled = false; 
       }
     }
   </script>
+
+  <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
+    <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
+      <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;">
+         設定 <button onclick="closeCfg()" style="background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#f0f9ff;border-radius:10px;padding:14px;font-size:13px;color:#0369a1;line-height:1.7;margin-bottom:18px;">
+         <strong>Gemini APIキー取得方法（無料）</strong><br>
+        1. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;">aistudio.google.com/apikey</a> を開く<br>
+        2. Googleアカウントでログイン<br>
+        3. 「APIキーを作成」→「鍵をコピー」<br>
+        4. 下の欄に貼り付けて「保存する」
+      </div>
+      <div style="margin-bottom:6px;font-size:13px;font-weight:700;color:#444;">Gemini API Key</div>
+      <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..." style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
+      <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
+      <button onclick="saveCfg()" style="display:block;width:100%;padding:16px;background:#e8441a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">保存する</button>
+      <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
+    </div>
+  </div>
+
 </body>
 </html>
