@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ヒアリング読取 | Cross Effect</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -207,6 +206,53 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    /* ランク */
+    .rank-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .rank-box.ra {
+      background: #fff5f3;
+      border: 2px solid var(--accent);
+    }
+    .rank-box.rb {
+      background: #eff6ff;
+      border: 2px solid var(--blue);
+    }
+    .rank-box.rc {
+      background: #f9fafb;
+      border: 2px solid var(--gray);
+    }
+    .rank-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .ra .rank-circle { background: var(--accent); }
+    .rb .rank-circle { background: var(--blue); }
+    .rc .rank-circle { background: var(--gray); }
+    .rank-info strong {
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .rank-info span {
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.5;
+    }
     /* フォーム */
     .sec-title {
       font-size: 11px;
@@ -297,6 +343,7 @@
       <div class="brand">CROSS EFFECT</div>
       <h1>ヒアリングシート読取</h1>
     </div>
+    <button onclick="openCfg()" style="background:none;border:1px solid #555;color:#ccc;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;"> 設定</button>
   </div>
 
   <div class="main">
@@ -306,7 +353,7 @@
         <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
         <span class="upload-icon"></span>
         <div class="upload-main">タップして撮影 / 選択</div>
-        <div class="upload-sub">名刺付きシートを選択（カメラ・ライブラリどちらも可）<br>端末内で文字を簡易読み取りします</div>
+        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 名刺情報を最優先でAIが自動読取します</div>
       </div>
       <div class="preview-wrap" id="previewWrap">
         <img id="previewImg" src="" alt="">
@@ -314,23 +361,20 @@
       </div>
     </div>
 
+    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで読み取る</button>
+    <div style="height:12px;"></div>
     <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
     <div id="resultArea" style="display:none;">
+      <div id="rankDisplay"></div>
       <div class="edit-banner">
-        <strong>内容の確認・修正</strong><br>
-        端末内で簡易文字読取を行いました。間違いを手動で修正してから送信してください。
-      </div>
-
-      <div class="card" style="background: #fafafa; border: 1px solid #e5e7eb;">
-        <div class="sec-title" style="color: var(--accent);">💡 画像から抽出されたテキスト（ここから手動コピペも可能）</div>
-        <div class="field">
-          <textarea id="ocr_raw_preview" style="min-height: 120px; font-size: 13px; background: #fff;" readonly placeholder="ここに画像から抽出されたすべての文字が並びます"></textarea>
-        </div>
+        <strong>名刺・ヒアリング内容の修正</strong><br>
+        各項目の入力欄をタップすると修正できます。<br>
+        AIの読み違いや漏れを直してから送信してください。
       </div>
 
       <div class="card">
-        <div class="sec-title"> 名刺情報</div>
+        <div class="sec-title"> 名刺情報（最優先項目）</div>
         <div class="field"><label>会社名</label><input id="f_company" type="text"></div>
         <div class="field"><label>部署</label><input id="f_department" type="text"></div>
         <div class="field"><label>氏名</label><input id="f_name" type="text"></div>
@@ -404,7 +448,13 @@
   </div>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+    const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+    const GEMINI_MODEL = 'gemini-2.5-flash';
+    const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+    function getKey() { return localStorage.getItem('xef_gemini') || ''; }
+
+    let imgB64 = null, imgMime = 'image/jpeg';
 
     function onFile(input) {
       const file = input.files[0];
@@ -414,64 +464,43 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX = 1200; // 端末内OCRを軽量化するため1200pxにリサイズ
+          const MAX = 1600;
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
           if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          imgB64 = dataUrl.split(',')[1];
+          imgMime = 'image/jpeg';
           document.getElementById('previewImg').src = dataUrl;
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
-          document.getElementById('resultArea').style.display  = 'block';
+          document.getElementById('analyzeBtn').disabled = false;
           
-          // 外部サーバーを使わないローカル文字認識の開始
-          localOCR(dataUrl);
+          // 画像選択した瞬間にすぐ入力項目を表示
+          document.getElementById('resultArea').style.display  = 'block';
+          hideSt();
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    // ── サーバーを使わない端末内OCR機能 ────────────────────────────
-    async function localOCR(imageSrc) {
-      showSt('loading', '端末内で文字を読み取り中...（10秒ほどかかります）');
-      try {
-        // 日本語と英語の認識データをローカル上で走らせる
-        const result = await Tesseract.recognize(imageSrc, 'jpn+eng');
-        const text = result.data.text;
-        
-        // 読み取った文字を一時置き場に全部出す
-        document.getElementById('ocr_raw_preview').value = text;
-
-        // 正規表現を使って、読み取った文字列からメール、電話、会社名を簡易的に自動抽出してあてはめる
-        const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-        const phoneMatch = text.match(/0[0-9]{1,4}[-(]?[0-9]{1,4}[-)]?[0-9]{3,4}/);
-        
-        if (emailMatch) document.getElementById('f_email').value = emailMatch[0];
-        if (phoneMatch) document.getElementById('f_phone').value = phoneMatch[0];
-        
-        showSt('success', '簡易読み取りが完了しました！足りない箇所は下を確認して手書きしてください。');
-      } catch (err) {
-        showSt('error', 'ローカル読み取りに失敗しました。このまま手動で入力してください。');
-      }
-    }
-
     function doReset() {
+      imgB64 = null;
       document.getElementById('fileInput').value = '';
       document.getElementById('uploadZone').style.display  = 'block';
       document.getElementById('previewWrap').style.display = 'none';
+      document.getElementById('analyzeBtn').disabled = true;
       document.getElementById('resultArea').style.display  = 'none';
       
-      // 全フォームの値をクリア
-      FMAP.forEach(([id]) => {
-        const el = document.getElementById(id);
-        if(el) el.value = '';
-      });
-      document.getElementById('ocr_raw_preview').value = '';
-      document.getElementById('submitBtn').disabled = false; // ボタンを確実に復活させる
+      const emptyData = {};
+      FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
+      fill(emptyData);
+      document.getElementById('rankDisplay').innerHTML = '';
+      document.getElementById('submitBtn').disabled = false; // ボタン無効化を確実に解除
+      
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -483,6 +512,109 @@
       document.getElementById('spinner').style.display = type === 'loading' ? 'block' : 'none';
     }
     function hideSt() { document.getElementById('status').className = 'status'; }
+
+    function calcRank(d) {
+      const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
+      const hasPrj = /ある|定定期|今後/.test(q1);
+      const urgent = /大至急|3ヶ月/.test(q2);
+      const mid    = /6ヶ月|1年|未定/.test(q2);
+      const issue  = q5.length > 0 && !q5.includes('課題なし');
+      const visit  = /ぜひ|見学したい/.test(q8);
+      if (hasPrj && urgent)              return 'A';
+      if ((hasPrj && mid)||issue||visit) return 'B';
+      return 'C';
+    }
+    const RINFO = {
+      A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+      B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+      C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+    };
+    function renderRank(r) {
+      const i = RINFO[r];
+      document.getElementById('rankDisplay').innerHTML = `
+        <div class="rank-box ${i.cls}">
+          <div class="rank-circle">${r}</div>
+          <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
+        </div>`;
+    }
+
+    async function analyze() {
+      const GEMINI_KEY = getKey();
+      if (!GEMINI_KEY) {
+        showSt('error', 'APIキーが未設定です。右上の設定からキーを入力してください。');
+        return;
+      }
+      document.getElementById('analyzeBtn').disabled = true;
+      showSt('loading', 'AIが名刺・シートを解析中...（10〜20秒）');
+
+      // 名刺情報を最優先で誤字なく抜き取るようにプロンプト命令文を大幅強化
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
+【最重要命令】
+右上にホチキス留め、または貼付されている「名刺」の画像を最優先でスキャンし、会社名、部署名、氏名、電話番号、メールアドレスを1文字の誤字もなく完全にテキストとして抽出してください。
+その後、印刷された□への手書きチェック（✓、○、×、塗りつぶし）やその他手書き項目、メモ欄を日本語として丁寧に読み取ってください。JSON形式のみを返却すること。`;
+
+      try {
+        const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [
+              { inline_data: { mime_type: imgMime, data: imgB64 } },
+              { text: prompt }
+            ]}],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  card_company: { type: "STRING" }, card_department: { type: "STRING" },
+                  card_name: { type: "STRING" }, card_phone: { type: "STRING" }, card_email: { type: "STRING" },
+                  date: { type: "STRING" }, staff: { type: "STRING" }, exhibition: { type: "STRING" },
+                  q1: { type: "STRING" }, q1_other: { type: "STRING" },
+                  q2: { type: "STRING" }, q2_other: { type: "STRING" },
+                  q3: { type: "STRING" }, q3_other: { type: "STRING" },
+                  q4: { type: "STRING" }, q4_other: { type: "STRING" },
+                  q5: { type: "STRING" }, q5_other: { type: "STRING" },
+                  q6: { type: "STRING" }, q6_other: { type: "STRING" },
+                  q7: { type: "STRING" }, q7_other: { type: "STRING" },
+                  q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
+                  memo: { type: "STRING" }
+                }
+              }
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const e = await response.json().catch(() => ({}));
+          const msg = e?.error?.message || '';
+          if (response.status === 429) {
+            throw new Error('Googleのアクセス制限（1分間に2回まで）に達しました。少し待って押し直してください。');
+          }
+          throw new Error(msg || `エラー(${response.status})`);
+        }
+
+        const json = await response.json();
+        const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const data = JSON.parse(rawText.trim());
+
+        fill(data);
+        const rank = calcRank(data);
+        renderRank(rank);
+
+        showSt('success', ' AI読み取り完了！自動入力された内容を確認・修正してください');
+        setTimeout(() => {
+          document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+      } catch (err) {
+        showSt('error', 'AI読み取りエラー: ' + err.message + ' (このまま手動で入力して送信することは可能です)');
+      } finally {
+        document.getElementById('analyzeBtn').disabled = false;
+      }
+    }
 
     const FMAP = [
       ['f_company','card_company'],['f_department','card_department'],
@@ -498,7 +630,13 @@
       ['f_q8','q8'],['f_q8_time','q8_visit_time'],
       ['f_memo','memo'],
     ];
-
+    function fill(d) {
+      FMAP.forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = d[key] || '';
+      });
+    }
     function collect() {
       const d = {};
       FMAP.forEach(([id, key]) => {
@@ -508,30 +646,67 @@
       return d;
     }
 
-    // ── スプレッドシート送信（エラーが出てもフリーズしないようボタン制御を改善） ──────────────────────────
+    function openCfg() {
+      const k = getKey();
+      document.getElementById('s_key').value = k;
+      document.getElementById('keyStatus').textContent = k ? ' 設定済み' : ' 未設定';
+      document.getElementById('keyStatus').style.color = k ? '#166534' : '#b91c1c';
+      document.getElementById('cfgOverlay').style.display = 'flex';
+    }
+    function closeCfg() { document.getElementById('cfgOverlay').style.display = 'none'; }
+    function saveCfg() {
+      const k = document.getElementById('s_key').value.trim();
+      if (!k) { alert('APIキーを入力してください'); return; }
+      localStorage.setItem('xef_gemini', k);
+      closeCfg();
+      showSt('success', ' APIキーを保存しました');
+      setTimeout(hideSt, 2000);
+    }
+
     async function submitData() {
       const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
+      btn.disabled = true; // 連打防止
       showSt('loading', 'スプレッドシートに送信中...');
       
-      const payload = collect();
+      const payload   = collect();
+      payload._rank   = calcRank(payload);
       payload._sentAt = new Date().toLocaleString('ja-JP');
       
       try {
         await fetch(GAS_URL, {
-          method: 'POST', 
-          mode: 'no-cors',
+          method: 'POST', mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(payload),
         });
-        
-        showSt('success', '送信完了！スプレッドシートを確認してください');
-        setTimeout(doReset, 3000);
+        showSt('success', ' 送信完了！スプレッドシートを確認してください');
+        setTimeout(doReset, 4000);
       } catch (err) {
-        showSt('error', '送信エラーが発生しました: ' + err.message + ' (もう一度送信ボタンを押せます)');
-        btn.disabled = false; // エラーが起きたらボタンを復活させて押し直せるようにする
+        showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
+        btn.disabled = false; // エラー時はボタンを復活させて手動送信できるようにする
       }
     }
   </script>
+
+  <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
+    <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
+      <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;">
+         設定 <button onclick="closeCfg()" style="background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#f0f9ff;border-radius:10px;padding:14px;font-size:13px;color:#0369a1;line-height:1.7;margin-bottom:18px;">
+         <strong>Gemini APIキー取得方法（無料）</strong><br>
+        1. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#2563eb;">aistudio.google.com/apikey</a> を開く<br>
+        2. Googleアカウントでログイン<br>
+        3. 「APIキーを作成」→「鍵をコピー」<br>
+        4. 下の欄に貼り付けて「保存する」
+      </div>
+      <div style="margin-bottom:6px;font-size:13px;font-weight:700;color:#444;">Gemini API Key</div>
+      <input id="s_key" type="password" placeholder="AQ.Ab8... または AIza..." style="width:100%;padding:14px;border:2px solid #d1d5db;border-radius:10px;font-size:15px;margin-bottom:8px;-webkit-appearance:none;">
+      <div id="keyStatus" style="font-size:12px;margin-bottom:20px;"></div>
+      <button onclick="saveCfg()" style="display:block;width:100%;padding:16px;background:#e8441a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">保存する</button>
+      <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">※ キーはこのスマホにのみ保存されます。他のメンバーも同じ手順で設定してください。</div>
+    </div>
+  </div>
+
 </body>
 </html>
