@@ -49,13 +49,6 @@
       font-size: 16px;
       font-weight: 700;
     }
-    .hdr-badge {
-      font-size: 10px;
-      background: #e8441a;
-      color: #fff;
-      padding: 3px 8px;
-      border-radius: 99px;
-    }
     .main {
       padding: 16px;
       max-width: 500px;
@@ -360,7 +353,7 @@
         <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
         <span class="upload-icon"></span>
         <div class="upload-main">タップして撮影 / 選択</div>
-        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 手書き文字もAIが読み取ります</div>
+        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 左上の名刺情報をAIが最優先で自動入力します</div>
       </div>
       <div class="preview-wrap" id="previewWrap">
         <img id="previewImg" src="" alt="">
@@ -456,7 +449,7 @@
 
   <script>
     // ═══════════════════════════════════════════════════
-    //  固定設定（安定稼働モデルの1.5-flashに完全に巻き戻し）
+    //  固定設定（確実に開放されている安定無料枠モデル名に復元）
     // ═══════════════════════════════════════════════════
     const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
     const GEMINI_MODEL = 'gemini-1.5-flash';
@@ -489,7 +482,9 @@
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
           document.getElementById('analyzeBtn').disabled = false;
-          document.getElementById('resultArea').style.display  = 'none';
+          
+          // アップロード完了と同時に入力エリアを展開
+          document.getElementById('resultArea').style.display  = 'block';
           hideSt();
         };
         img.src = e.target.result;
@@ -509,6 +504,7 @@
       FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
       fill(emptyData);
       document.getElementById('rankDisplay').innerHTML = '';
+      document.getElementById('submitBtn').disabled = false; 
       
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -547,7 +543,7 @@
         </div>`;
     }
 
-    // ── AI読み取り（一番最初にもらった正常ロジックそのもの） ────────────────
+    // ── AI読み取り（プロンプトの位置指定命令を「左上」に完全修正・最強化） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -555,11 +551,18 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
-      document.getElementById('resultArea').style.display = 'none';
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
+      // 「左上にある名刺」を確実にロックオンさせるための超厳格なルール命令
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。 
-【必ず守るルール】 1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 4. 日本語の手書き文字を丁寧に読み取ること 5. 複数選択はカンマ区切りで列記すること 6. 読み取れない項目は空文字にすること 7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要） 
+【必ず守るルール】 
+1. 写真の【左上】にホチキス留め、または貼付されている「名刺」の文字列を最優先ですべて正確に読み取ること（会社名、部署、氏名、電話番号、メールアドレスを絶対に逃さないこと）
+2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 
+3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 
+4. 日本語の手書き文字を丁寧に読み取ること 
+5. 複数選択はカンマ区切りで列記すること 
+6. 読み取れない項目は空文字にすること 
+7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要） 
 
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
@@ -598,16 +601,13 @@
         const rank = calcRank(data);
         renderRank(rank);
 
+        showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
         setTimeout(() => {
-          document.getElementById('resultArea').style.display = 'block';
-          showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
-          setTimeout(() => {
-            document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 200);
-        }, 100);
+          document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
 
       } catch (err) {
-        showSt('error', '読み取りエラー: ' + err.message);
+        showSt('error', '読み取りエラー: ' + err.message + ' (このまま手動修正して送信可能です)');
       } finally {
         document.getElementById('analyzeBtn').disabled = false;
       }
@@ -661,7 +661,8 @@
     }
 
     async function submitData() {
-      document.getElementById('submitBtn').disabled = true;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
       const payload   = collect();
       payload._rank   = calcRank(payload);
@@ -675,8 +676,8 @@
         showSt('success', ' 送信完了！スプレッドシートを確認してください');
         setTimeout(doReset, 4000);
       } catch (err) {
-        showSt('error', '送信エラー: ' + err.message);
-        document.getElementById('submitBtn').disabled = false;
+        showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
+        btn.disabled = false; // エラー時は確実に送信ボタンを復活
       }
     }
   </script>
