@@ -49,6 +49,13 @@
       font-size: 16px;
       font-weight: 700;
     }
+    .hdr-badge {
+      font-size: 10px;
+      background: #e8441a;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 99px;
+    }
     .main {
       padding: 16px;
       max-width: 500px;
@@ -448,14 +455,19 @@
   </div>
 
   <script>
+    // ═══════════════════════════════════════════════════
+    //  固定設定（安定稼働モデルの1.5-flashに完全に巻き戻し）
+    // ═══════════════════════════════════════════════════
     const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-    const GEMINI_MODEL = 'gemini-2.5-flash';
+    const GEMINI_MODEL = 'gemini-1.5-flash';
     const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     function getKey() { return localStorage.getItem('xef_gemini') || ''; }
+    // ═══════════════════════════════════════════════════
 
     let imgB64 = null, imgMime = 'image/jpeg';
 
+    // ── ファイル選択・圧縮 ────────────────────────────
     function onFile(input) {
       const file = input.files[0];
       if (!file) return;
@@ -477,9 +489,7 @@
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
           document.getElementById('analyzeBtn').disabled = false;
-          
-          // 画像をセットした瞬間にフォームを表示（手動入力もすぐ可能に）
-          document.getElementById('resultArea').style.display  = 'block';
+          document.getElementById('resultArea').style.display  = 'none';
           hideSt();
         };
         img.src = e.target.result;
@@ -499,7 +509,6 @@
       FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
       fill(emptyData);
       document.getElementById('rankDisplay').innerHTML = '';
-      document.getElementById('submitBtn').disabled = false; // 無効化リセット
       
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -538,7 +547,7 @@
         </div>`;
     }
 
-    // ── AI読み取り機能（完全に初期の正常動作コードへ復元） ────────────────
+    // ── AI読み取り（一番最初にもらった正常ロジックそのもの） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -546,6 +555,7 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
+      document.getElementById('resultArea').style.display = 'none';
       showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
       const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。 
@@ -588,13 +598,16 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
         setTimeout(() => {
-          document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 200);
+          document.getElementById('resultArea').style.display = 'block';
+          showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
+          setTimeout(() => {
+            document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 200);
+        }, 100);
 
       } catch (err) {
-        showSt('error', '読み取りエラー: ' + err.message + ' (このまま手動修正して送信可能です)');
+        showSt('error', '読み取りエラー: ' + err.message);
       } finally {
         document.getElementById('analyzeBtn').disabled = false;
       }
@@ -648,8 +661,7 @@
     }
 
     async function submitData() {
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true; 
+      document.getElementById('submitBtn').disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
       const payload   = collect();
       payload._rank   = calcRank(payload);
@@ -663,8 +675,8 @@
         showSt('success', ' 送信完了！スプレッドシートを確認してください');
         setTimeout(doReset, 4000);
       } catch (err) {
-        showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
-        btn.disabled = false; // エラー時は確実にボタンを復活させる
+        showSt('error', '送信エラー: ' + err.message);
+        document.getElementById('submitBtn').disabled = false;
       }
     }
   </script>
