@@ -302,7 +302,6 @@
       user-select: none;
       transition: all 0.15s;
     }
-    /* チェックされたらオレンジ色になる */
     .select-item input[type="radio"]:checked + .select-label {
       background: var(--accent);
       color: #fff;
@@ -601,11 +600,12 @@
     }
 
     function calcRank(d) {
-      const hasPrj = /ある|近々|定定期/.test(d.q1);
-      const urgent = /大至急|3ヶ月/.test(d.q2);
-      const mid    = /6ヶ月|1年|未定/.test(d.q2);
-      const issue  = d.q5.length > 0 && !d.q5.includes('課題なし');
-      const visit  = /ぜひ見学/.test(d.q8);
+      const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
+      const hasPrj = /ある|近々|定定期/.test(q1);
+      const urgent = /大至急|3ヶ月/.test(q2);
+      const mid    = /6ヶ月|1年|未定/.test(q2);
+      const issue  = q5.length > 0 && !q5.includes('課題なし');
+      const visit  = /ぜひ見学/.test(q8);
       if (hasPrj && urgent)              return 'A';
       if ((hasPrj && mid)||issue||visit) return 'B';
       return 'C';
@@ -624,7 +624,7 @@
         </div>`;
     }
 
-    // ── AI読み取り（ラジオボタンへの正確な自動マッピング処理を完全実装） ────────────────
+    // ── AI読み取り（最初期の一切加工していないプレーンな通信モデルへ完全復元） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -632,12 +632,12 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
-      showSt('loading', 'AIが【左上】の名刺とシートを解析中...（10〜20秒）');
+      showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-【必ず守るルール】
-1. 写真の【左上】にホチキス留め、または貼付されている「名刺」の文字列を最優先ですべて正確に読み取ること（会社名、部署、氏名、電話番号、メールアドレスを絶対に逃さないこと）
-2. 印刷された□に手書きで✓や○が入っている選択肢、記述式の「その他」欄、備考欄の手書きテキストを正確に読み取り日本語として抽出してください。JSON形式のみで返却すること。`;
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。 
+【必ず守るルール】 1. 写真の【左上】に名刺が貼付されている場合は名刺の文字を全て読み取ること 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 4. 日本語の手書き文字を丁寧に読み取ること 5. 複数選択はカンマ区切りで列記すること 6. 読み取れない項目は空文字にすること 7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要） 
+
+{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
       try {
         const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
@@ -649,27 +649,7 @@
             contents: [{ parts: [
               { inline_data: { mime_type: imgMime, data: imgB64 } },
               { text: prompt }
-            ]}],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  card_company: { type: "STRING" }, card_department: { type: "STRING" },
-                  card_name: { type: "STRING" }, card_phone: { type: "STRING" }, card_email: { type: "STRING" },
-                  date: { type: "STRING" }, staff: { type: "STRING" }, exhibition: { type: "STRING" },
-                  q1: { type: "STRING" }, q1_other: { type: "STRING" },
-                  q2: { type: "STRING" }, q2_other: { type: "STRING" },
-                  q3: { type: "STRING" }, q3_other: { type: "STRING" },
-                  q4: { type: "STRING" }, q4_other: { type: "STRING" },
-                  q5: { type: "STRING" }, q5_other: { type: "STRING" },
-                  q6: { type: "STRING" }, q6_other: { type: "STRING" },
-                  q7: { type: "STRING" }, q7_other: { type: "STRING" },
-                  q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
-                  memo: { type: "STRING" }
-                }
-              }
-            }
+            ]}]
           })
         });
 
@@ -677,52 +657,24 @@
           const e = await res.json().catch(() => ({}));
           const msg = e?.error?.message || '';
           if (res.status === 429 || msg.includes('high demand')) {
-            throw new Error('Googleの無料枠制限（1分間に2枚まで）に達しました。少し待って押し直してください。');
+            throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
           }
           throw new Error(msg || `エラー(${res.status})`);
         }
 
-        const json = await response.json();
-        const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        const data = JSON.parse(rawText.trim());
+        const json  = await res.json();
+        const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = raw.replace(/```[a-z]*\n?|```/g, '').trim();
 
-        // テキストフォームの流し込み
-        document.getElementById('f_company').value    = data.card_company || '';
-        document.getElementById('f_department').value = data.card_department || '';
-        document.getElementById('f_name').value       = data.card_name || '';
-        document.getElementById('f_phone').value      = data.card_phone || '';
-        document.getElementById('f_email').value      = data.card_email || '';
-        document.getElementById('f_exhibition').value = data.exhibition || '';
-        document.getElementById('f_date').value       = data.date || '';
-        document.getElementById('f_staff').value      = data.staff || '';
-        document.getElementById('f_q1_other').value   = data.q1_other || '';
-        document.getElementById('f_q2_other').value   = data.q2_other || '';
-        document.getElementById('f_q3_other').value   = data.q3_other || '';
-        document.getElementById('f_q4_other').value   = data.q4_other || '';
-        document.getElementById('f_q5_other').value   = data.q5_other || '';
-        document.getElementById('f_q6_other').value   = data.q6_other || '';
-        document.getElementById('f_q7_other').value   = data.q7_other || '';
-        document.getElementById('f_q8_time').value    = data.q8_visit_time || '';
-        document.getElementById('f_memo').value         = data.memo || '';
+        let data;
+        try { data = JSON.parse(clean); }
+        catch { throw new Error('AIの返答を解析できませんでした。もう一度試してください。'); }
 
-        // ラジオボタンの自動選択マッピング
-        ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'].forEach(key => {
-          if (data[key]) {
-            const val = data[key].trim();
-            const rbs = document.querySelectorAll(`input[name="${key}"]`);
-            rbs.forEach(rb => {
-              if (val.includes(rb.value) || rb.value.includes(val)) {
-                rb.checked = true;
-              }
-            });
-          }
-        });
-
-        const payload = collect();
-        const rank = calcRank(payload);
+        fill(data);
+        const rank = calcRank(data);
         renderRank(rank);
 
-        showSt('success', ' AI読み取り完了！修正箇所を直して送信してください');
+        showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
         setTimeout(() => {
           document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 200);
@@ -738,10 +690,51 @@
       ['f_company','card_company'],['f_department','card_department'],
       ['f_name','card_name'],['f_phone','card_phone'],['f_email','card_email'],
       ['f_exhibition','exhibition'],['f_date','date'],['f_staff','staff'],
-      ['f_q1_other','q1_other'],['f_q2_other','q2_other'],['f_q3_other','q3_other'],
-      ['f_q4_other','q4_other'],['f_q5_other','q5_other'],['f_q6_other','q6_other'],
-      ['f_q7_other','q7_other'],['f_q8_time','q8_visit_time'],['f_memo','memo']
+      ['f_q1','q1'],['f_q1_other','q1_other'],
+      ['f_q2','q2'],['f_q2_other','q2_other'],
+      ['f_q3','q3'],['f_q3_other','q3_other'],
+      ['f_q4','q4'],['f_q4_other','q4_other'],
+      ['f_q5','q5'],['f_q5_other','q5_other'],
+      ['f_q6','q6'],['f_q6_other','q6_other'],
+      ['f_q7','q7'],['f_q7_other','q7_other'],
+      ['f_q8','q8'],['f_q8_time','q8_visit_time'],
+      ['f_memo','memo'],
     ];
+    
+    // AIが読み取った内容をラジオボタンとテキストに正しく流し込む処理
+    function fill(d) {
+      // テキスト入力の流し込み
+      document.getElementById('f_company').value    = d.card_company || '';
+      document.getElementById('f_department').value = d.card_department || '';
+      document.getElementById('f_name').value       = data.card_name || '';
+      document.getElementById('f_phone').value      = d.card_phone || '';
+      document.getElementById('f_email').value      = d.card_email || '';
+      document.getElementById('f_exhibition').value = d.exhibition || '';
+      document.getElementById('f_date').value       = d.date || '';
+      document.getElementById('f_staff').value      = d.staff || '';
+      document.getElementById('f_q1_other').value   = d.q1_other || '';
+      document.getElementById('f_q2_other').value   = d.q2_other || '';
+      document.getElementById('f_q3_other').value   = d.q3_other || '';
+      document.getElementById('f_q4_other').value   = d.q4_other || '';
+      document.getElementById('f_q5_other').value   = d.q5_other || '';
+      document.getElementById('f_q6_other').value   = d.q6_other || '';
+      document.getElementById('f_q7_other').value   = d.q7_other || '';
+      document.getElementById('f_q8_time').value    = d.q8_visit_time || '';
+      document.getElementById('f_memo').value       = d.memo || '';
+
+      // ラジオボタンのマッピング（部分一致対応）
+      ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'].forEach(key => {
+        if (d[key]) {
+          const val = d[key].trim();
+          const rbs = document.querySelectorAll(`input[name="${key}"]`);
+          rbs.forEach(rb => {
+            if (val.includes(rb.value) || rb.value.includes(val)) {
+              rb.checked = true;
+            }
+          });
+        }
+      });
+    }
 
     async function submitData() {
       const btn = document.getElementById('submitBtn');
