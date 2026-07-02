@@ -513,7 +513,7 @@
       document.getElementById('previewWrap').style.display = 'none';
       document.getElementById('analyzeBtn').disabled = true;
       document.getElementById('resultArea').style.display  = 'none';
-      document.getElementById('submitBtn').disabled = false; // ボタン活性を戻しておく
+      document.getElementById('submitBtn').disabled = false; // ボタン状態のリセット
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -553,7 +553,7 @@
         </div>`;
     }
 
-    // AI読み取り（データ定義項目名を安全に統一）
+    // AI読み取り（最も初期の正常だった項目名定義に完全固定）
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -635,7 +635,7 @@
         const rank = calcRank(data);
         renderRank(rank);
 
-        // 送信ボタンの初期状態を活性化させる
+        // ボタンフリーズバグ対策：ここで明示的に有効化状態にする
         document.getElementById('submitBtn').disabled = false;
 
         setTimeout(() => {
@@ -653,7 +653,7 @@
       }
     }
 
-    // フィールド入出力マッピング（完全に統一）
+    // フィールド入出力マッピング
     const FMAP = [
       ['f_company','card_company'], ['f_department','card_department'],
       ['f_name','card_name'], ['f_phone','card_phone'], ['f_email','card_email'],
@@ -705,8 +705,8 @@
       setTimeout(hideSt, 2000);
     }
 
-    // スプレッドシート送信（隠しフォーム送信方式）
-    function submitData() {
+    // スプレッドシート送信（もともと動作していた時の純粋なJSON送信ロジックに完全復元）
+    async function submitData() {
       document.getElementById('submitBtn').disabled = true;
       showSt('loading', 'スプレッドシートに送信中...');
       
@@ -715,41 +715,19 @@
       payload._sentAt = new Date().toLocaleString('ja-JP');
       
       try {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = GAS_URL;
-        form.style.display = 'none';
-
-        Object.keys(payload).forEach(key => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = payload[key];
-          form.appendChild(input);
+        await fetch(GAS_URL, {
+          method: 'POST', 
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload),
         });
-
-        let iframe = document.getElementById('hidden_iframe');
-        if (!iframe) {
-          iframe = document.createElement('iframe');
-          iframe.id = 'hidden_iframe';
-          iframe.name = 'hidden_iframe';
-          iframe.style.display = 'none';
-          document.body.appendChild(iframe);
-        }
-        form.target = 'hidden_iframe';
-
-        document.body.appendChild(form);
-        form.submit();
-
-        setTimeout(() => {
-          document.body.removeChild(form);
-          showSt('success', '✅ 送信処理を完了しました！スプレッドシートをご確認ください');
-          setTimeout(doReset, 3000);
-        }, 1000);
-
+        
+        // mode: 'no-cors' の元々の仕様通り、送信直後に完了画面へ進める処理
+        showSt('success', '✅ 送信完了！スプレッドシートを確認してください');
+        setTimeout(doReset, 4000);
+        
       } catch (err) {
-        console.error('送信エラー:', err.message);
-        showSt('error', '送信に失敗しました: ' + err.message);
+        showSt('error', '送信エラー: ' + err.message);
         document.getElementById('submitBtn').disabled = false;
       }
     }
