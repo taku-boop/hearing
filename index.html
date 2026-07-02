@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ヒアリング読取 | Cross Effect</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -354,7 +353,7 @@
         <input type="file" accept="image/*" id="fileInput" onchange="onFile(this)">
         <span class="upload-icon"></span>
         <div class="upload-main">タップして撮影 / 選択</div>
-        <div class="upload-sub">名刺付きシートを選択。画像を入れると名刺データを一瞬で簡易抽出します</div>
+        <div class="upload-sub">名刺付きシートを1枚選択（カメラ撮影・ライブラリどちらも可）<br> 手書き文字もAIが読み取ります</div>
       </div>
       <div class="preview-wrap" id="previewWrap">
         <img id="previewImg" src="" alt="">
@@ -362,15 +361,16 @@
       </div>
     </div>
 
-    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで残りのシート項目を読み取る</button>
+    <button class="btn btn-accent" id="analyzeBtn" onclick="analyze()" disabled> AIで読み取る</button>
     <div style="height:12px;"></div>
     <div class="status" id="status"><div class="spinner" id="spinner"></div><span id="statusMsg"></span></div>
 
     <div id="resultArea" style="display:none;">
       <div id="rankDisplay"></div>
       <div class="edit-banner">
-        <strong>内容の確認・修正</strong><br>
-        名刺情報は端末内で自動で簡易抽出されます。手書き文字や細かいチェック項目は上の「AIで読み取る」ボタンを押すか、手動で修正して送信してください。
+        <strong>内容を修正できます</strong><br>
+        各項目の入力欄をタップするとキーボードが表示されます。<br>
+        AIの読み違いを直してから送信してください。
       </div>
 
       <div class="card">
@@ -464,7 +464,7 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX = 1400; // 読み込み処理安定のため1400pxにリサイズ
+          const MAX = 1600;
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
           if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -477,34 +477,14 @@
           document.getElementById('uploadZone').style.display  = 'none';
           document.getElementById('previewWrap').style.display = 'block';
           document.getElementById('analyzeBtn').disabled = false;
-          document.getElementById('resultArea').style.display  = 'block';
           
-          // 【併用機能】画像が上がった瞬間に、まずサーバーを介さず名刺テキストだけを抜く
-          fastCardOCR(dataUrl);
+          // 画像をセットした瞬間にフォームを表示（手動入力もすぐ可能に）
+          document.getElementById('resultArea').style.display  = 'block';
+          hideSt();
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
-    }
-
-    // ── 併用機能：ローカル処理による名刺情報の超速スピード抽出 ────────────────
-    async function fastCardOCR(imageSrc) {
-      showSt('loading', 'まず名刺情報を超速読取中...');
-      try {
-        const result = await Tesseract.recognize(imageSrc, 'jpn+eng');
-        const text = result.data.text;
-        
-        // メールアドレスと電話番号っぽい記述があれば、AIを待たずに即時先行あてはめ
-        const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-        const phoneMatch = text.match(/0[0-9]{1,4}[-(]?[0-9]{1,4}[-)]?[0-9]{3,4}/);
-        
-        if (emailMatch) document.getElementById('f_email').value = emailMatch[0];
-        if (phoneMatch) document.getElementById('f_phone').value = phoneMatch[0];
-        
-        showSt('success', '名刺の先行抽出が完了しました。手書き項目等は下のボタンでAIを走らせてください。');
-      } catch (err) {
-        showSt('success', '簡易読取をスキップしました。そのままAIボタンを押してください。');
-      }
     }
 
     function doReset() {
@@ -519,7 +499,7 @@
       FMAP.forEach(([id, key]) => { emptyData[key] = ''; });
       fill(emptyData);
       document.getElementById('rankDisplay').innerHTML = '';
-      document.getElementById('submitBtn').disabled = false; 
+      document.getElementById('submitBtn').disabled = false; // 無効化リセット
       
       hideSt();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -558,7 +538,7 @@
         </div>`;
     }
 
-    // ── AI読み取り機能（最新仕様での安定化版） ────────────────
+    // ── AI読み取り機能（完全に初期の正常動作コードへ復元） ────────────────
     async function analyze() {
       const GEMINI_KEY = getKey();
       if (!GEMINI_KEY) {
@@ -566,70 +546,55 @@
         return;
       }
       document.getElementById('analyzeBtn').disabled = true;
-      showSt('loading', 'AIが手書き項目・チェック内容を深く解析中...（10〜20秒）');
+      showSt('loading', 'AIが読み取り中...（10〜20秒かかります）');
 
-      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。
-印刷された□に手書きで✓や○が入っている選択肢や、記述式の「その他」欄、備考欄の手書き文字を正確に読み取り日本語として抽出してください。
-また、右上の名刺情報（会社名、部署、氏名、電話、メール）も読み取り、データに上書き反映してください。JSON形式のみで返却すること。`;
+      const prompt = `これはクロスエフェクト株式会社の展示会ヒアリングシートの写真です。 
+【必ず守るルール】 1. 右上に名刺が貼付されている場合は名刺の文字を全て読み取ること 2. 印刷された□に手書きで✓・○・×・塗りつぶし等が入っている選択肢を読み取ること 3. 「その他」欄・備考欄の手書きテキストを正確に読み取ること 4. 日本語の手書き文字を丁寧に読み取ること 5. 複数選択はカンマ区切りで列記すること 6. 読み取れない項目は空文字にすること 7. JSONのみを返すこと（コードブロック・説明文・余分な文字は一切不要） 
+
+{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
       try {
         const url = `${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
-        const response = await fetch(url, {
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [
               { inline_data: { mime_type: imgMime, data: imgB64 } },
               { text: prompt }
-            ]}],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  card_company: { type: "STRING" }, card_department: { type: "STRING" },
-                  card_name: { type: "STRING" }, card_phone: { type: "STRING" }, card_email: { type: "STRING" },
-                  date: { type: "STRING" }, staff: { type: "STRING" }, exhibition: { type: "STRING" },
-                  q1: { type: "STRING" }, q1_other: { type: "STRING" },
-                  q2: { type: "STRING" }, q2_other: { type: "STRING" },
-                  q3: { type: "STRING" }, q3_other: { type: "STRING" },
-                  q4: { type: "STRING" }, q4_other: { type: "STRING" },
-                  q5: { type: "STRING" }, q5_other: { type: "STRING" },
-                  q6: { type: "STRING" }, q6_other: { type: "STRING" },
-                  q7: { type: "STRING" }, q7_other: { type: "STRING" },
-                  q8: { type: "STRING" }, q8_visit_time: { type: "STRING" },
-                  memo: { type: "STRING" }
-                }
-              }
-            }
+            ]}]
           })
         });
 
-        if (!response.ok) {
-          const e = await response.json().catch(() => ({}));
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
           const msg = e?.error?.message || '';
-          if (response.status === 429) {
-            throw new Error('Googleの無料枠制限（1分間に2枚まで）に達しました。少し待って押し直してください。');
+          if (res.status === 429 || msg.includes('high demand')) {
+            throw new Error('現在Googleのサーバーが大変混み合っています。恐れ入りますが、10秒ほど待ってからもう一度「AIで読み取る」を押してください。');
           }
-          throw new Error(msg || `エラー(${response.status})`);
+          throw new Error(msg || `エラー(${res.status})`);
         }
 
-        const json = await response.json();
-        const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        const data = JSON.parse(rawText.trim());
+        const json  = await res.json();
+        const raw   = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = raw.replace(/```[a-z]*\n?|```/g, '').trim();
+
+        let data;
+        try { data = JSON.parse(clean); }
+        catch { throw new Error('AIの返答を解析できませんでした。もう一度試してください。'); }
 
         fill(data);
         const rank = calcRank(data);
         renderRank(rank);
 
-        showSt('success', ' AIによる詳細項目の読み取りが完了しました！');
+        showSt('success', ' 読み取り完了！内容を確認・修正して送信してください');
         setTimeout(() => {
           document.getElementById('rankDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 200);
 
       } catch (err) {
-        showSt('error', 'AI読取エラー: ' + err.message + ' (先行取得された名刺情報をベースに、手動で補完して送信可能です)');
+        showSt('error', '読み取りエラー: ' + err.message + ' (このまま手動修正して送信可能です)');
       } finally {
         document.getElementById('analyzeBtn').disabled = false;
       }
@@ -652,8 +617,8 @@
     function fill(d) {
       FMAP.forEach(([id, key]) => {
         const el = document.getElementById(id);
-        if (!el || !d[key]) return; // 空白データで既存の先行入力値を上書き消去させないガード
-        el.value = d[key];
+        if (!el) return;
+        el.value = d[key] || '';
       });
     }
     function collect() {
@@ -686,11 +651,9 @@
       const btn = document.getElementById('submitBtn');
       btn.disabled = true; 
       showSt('loading', 'スプレッドシートに送信中...');
-      
       const payload   = collect();
       payload._rank   = calcRank(payload);
       payload._sentAt = new Date().toLocaleString('ja-JP');
-      
       try {
         await fetch(GAS_URL, {
           method: 'POST', mode: 'no-cors',
@@ -701,7 +664,7 @@
         setTimeout(doReset, 4000);
       } catch (err) {
         showSt('error', '送信エラー: ' + err.message + ' (もう一度送信ボタンを押せます)');
-        btn.disabled = false; 
+        btn.disabled = false; // エラー時は確実にボタンを復活させる
       }
     }
   </script>
