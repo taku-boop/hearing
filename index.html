@@ -20,20 +20,20 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 .card { background:var(--card); border-radius:14px; padding:18px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
 .card-lbl { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; margin-bottom:14px; }
 
-/* アップロード */
 .upload-zone { border:2px dashed #ccc; border-radius:10px; padding:32px 20px; text-align:center; background:#fafafa; position:relative; cursor:pointer; }
 .upload-zone:active { border-color:var(--accent); background:#fff5f3; }
 .upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; font-size:16px; }
 .upload-icon { font-size:44px; display:block; margin-bottom:10px; pointer-events:none; }
 .upload-main { font-size:16px; font-weight:700; color:var(--dark); margin-bottom:4px; pointer-events:none; }
 .upload-sub { font-size:13px; color:var(--sub); line-height:1.6; pointer-events:none; }
+
 .camera-btn { display:block; width:100%; margin-top:12px; padding:14px; background:#fff; border:2px solid var(--border); border-radius:10px; font-size:15px; font-weight:700; color:var(--dark); cursor:pointer; font-family:inherit; -webkit-appearance:none; position:relative; text-align:center; }
 .camera-btn input[type="file"] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; font-size:16px; }
+
 .preview-wrap { display:none; position:relative; }
 .preview-wrap img { width:100%; border-radius:10px; display:block; }
 .preview-clear { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.7); color:#fff; border:none; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
-/* ボタン */
 .btn { display:block; width:100%; padding:17px; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; text-align:center; font-family:inherit; -webkit-appearance:none; letter-spacing:.02em; }
 .btn:active { filter:brightness(.9); }
 .btn:disabled { opacity:.4; pointer-events:none; }
@@ -43,7 +43,6 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 .btn-outline { background:#fff; color:var(--dark); border:2px solid var(--border); font-size:14px; padding:13px; }
 .btn-manual { background:#fff; color:var(--accent); border:2px solid var(--accent); margin-top:10px; font-size:15px; padding:14px; }
 
-/* ステータス */
 .status { display:none; padding:14px 16px; border-radius:12px; font-size:14px; margin-bottom:14px; align-items:center; gap:12px; line-height:1.5; }
 .status.loading { display:flex; background:#eff6ff; color:#1d4ed8; }
 .status.success { display:flex; background:#f0fdf4; color:#166534; }
@@ -51,7 +50,6 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 .spinner { width:22px; height:22px; flex-shrink:0; border:3px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-/* ランク */
 .rank-box { display:flex; align-items:center; gap:16px; padding:18px; border-radius:14px; margin-bottom:14px; }
 .rank-box.ra { background:#fff5f3; border:2px solid var(--accent); }
 .rank-box.rb { background:#eff6ff; border:2px solid var(--blue); }
@@ -63,7 +61,6 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 .rank-info strong { display:block; font-size:17px; font-weight:700; margin-bottom:4px; }
 .rank-info span { font-size:12px; color:var(--sub); line-height:1.5; }
 
-/* フォーム */
 .sec-title { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; padding-bottom:10px; border-bottom:1px solid #f0f0f0; margin-bottom:16px; }
 .field { margin-bottom:16px; }
 .field:last-child { margin-bottom:0; }
@@ -72,15 +69,15 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 .field input[type="text"]:focus, .field textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,68,26,.2); }
 .field textarea { display:block; width:100%; min-height:100px; padding:14px; border:2px solid #d1d5db; border-radius:10px; font-size:16px; line-height:1.6; color:#111; background:#fff; resize:vertical; -webkit-user-select:text; user-select:text; touch-action:manipulation; }
 
-/* ラジオボタンUI */
 .select-group { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
 .select-item { position:relative; }
 .select-item input[type="radio"] { position:absolute; opacity:0; width:0; height:0; }
 .select-label { display:block; padding:11px 16px; background:#f3f4f6; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; user-select:none; transition:all 0.15s; white-space:nowrap; }
 .select-item input[type="radio"]:checked + .select-label { background:var(--accent); color:#fff; border-color:var(--accent); }
 
-.edit-banner { background:#fef9e7; border:1.5px solid #f6c90e; border-radius:12px; padding:14px 16px; font-size:14px; color:#7c5c00; margin-bottom:14px; line-height:1.7; }
-.manual-banner { background:#fff5f3; border:1.5px solid var(--accent); border-radius:12px; padding:14px 16px; font-size:14px; color:#b91c1c; margin-bottom:14px; line-height:1.7; }
+.banner { border-radius:12px; padding:14px 16px; font-size:14px; margin-bottom:14px; line-height:1.7; }
+.banner-yellow { background:#fef9e7; border:1.5px solid #f6c90e; color:#7c5c00; }
+.banner-red    { background:#fff5f3; border:1.5px solid var(--accent); color:#b91c1c; }
 </style>
 </head>
 <body>
@@ -142,8 +139,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q1 開発・試作の案件</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q1" value="ある"><span class="select-label">ある</span></label>
           <label class="select-item"><input type="radio" name="q1" value="今後予定あり"><span class="select-label">今後予定あり</span></label>
@@ -157,8 +153,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q2 スケジュール</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q2" value="大至急"><span class="select-label">大至急</span></label>
           <label class="select-item"><input type="radio" name="q2" value="3ヶ月以内"><span class="select-label">3ヶ月以内</span></label>
@@ -172,8 +167,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q3 ロット規模</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q3" value="試作・1点もの"><span class="select-label">試作・1点</span></label>
           <label class="select-item"><input type="radio" name="q3" value="小ロット(〜100個)"><span class="select-label">小ロット</span></label>
@@ -187,8 +181,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q4 使用材質</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q4" value="樹脂(プラスチック)"><span class="select-label">樹脂</span></label>
           <label class="select-item"><input type="radio" name="q4" value="金属・アルミ"><span class="select-label">金属</span></label>
@@ -203,8 +196,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q5 現在の課題</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q5" value="コストを下げたい"><span class="select-label">コスト削減</span></label>
           <label class="select-item"><input type="radio" name="q5" value="納期を短縮したい"><span class="select-label">納期短縮</span></label>
@@ -219,8 +211,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q6 デザイン・設計</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q6" value="製品デザイン(外観・形状)"><span class="select-label">製品デザイン</span></label>
           <label class="select-item"><input type="radio" name="q6" value="設計・3Dモデリング"><span class="select-label">3Dモデリング</span></label>
@@ -233,8 +224,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q7 CG動画・VR</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q7" value="製品プレゼン用CG動画"><span class="select-label">CG動画</span></label>
           <label class="select-item"><input type="radio" name="q7" value="VR/メタバース展示"><span class="select-label">VR</span></label>
@@ -247,8 +237,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <div class="card">
       <div class="sec-title">Q8 工場見学</div>
-      <div class="field">
-        <label>チェック内容（タップで変更可）</label>
+      <div class="field"><label>チェック内容（タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="radio" name="q8" value="ぜひ見学したい"><span class="select-label">ぜひ見学</span></label>
           <label class="select-item"><input type="radio" name="q8" value="検討中"><span class="select-label">検討中</span></label>
@@ -265,19 +254,19 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
     <button class="btn btn-outline" onclick="doReset()">← 最初からやり直す</button>
-
   </div>
 </div>
 
 <script>
-const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
-const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_API   = 'https://generativelanguage.googleapis.com/v1beta/models';
-function getKey() { return localStorage.getItem('xef_gemini') || ''; }
+const GAS_URL    = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models';
+// ★複数モデルを順番に試す★
+const MODELS = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
 
+function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択（一番最初の高精度・エラーなしの設定に100%完全復元） ──────────────────
+// ── ファイル選択 ──────────────────────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -301,12 +290,7 @@ function onFile(input) {
       document.getElementById('previewWrap').style.display = 'block';
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
-      
-      // 画像が入った瞬間にフォームを強制表示（待機中の入力を可能にする）
-      document.getElementById('resultArea').style.display  = 'block';
-      document.getElementById('submitBtn').disabled = false;
-      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
-      
+      document.getElementById('resultArea').style.display  = 'none';
       hideSt();
     };
     img.src = e.target.result;
@@ -326,7 +310,6 @@ function doReset() {
   document.getElementById('rankDisplay').innerHTML = '';
   document.getElementById('modeBanner').innerHTML = '';
   document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
-  document.getElementById('submitBtn').disabled = false;
   clearFields();
   hideSt();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -340,7 +323,6 @@ function clearFields() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
 }
 
-// ── ステータス ────────────────────────────────────
 function showSt(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -349,7 +331,6 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
-// ── ランク ────────────────────────────────────────
 function calcRank(d) {
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
@@ -362,9 +343,9 @@ function calcRank(d) {
   return 'C';
 }
 const RINFO = {
-  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
-  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
+  A:{ cls:'ra', label:'Aランク　今すぐ対応',   desc:'直近案件あり・大手開発者で案件見込み' },
+  B:{ cls:'rb', label:'Bランク　継続フォロー', desc:'中長期案件・相談・見学ニーズあり' },
+  C:{ cls:'rc', label:'Cランク　情報提供のみ', desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
   const i = RINFO[r];
@@ -375,113 +356,128 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── Gemini呼び出し共通 ───────────────────────────
+// ── Gemini呼び出し（モデル自動切替） ─────────────
 async function callGemini(prompt) {
   const key = getKey();
-  if (!key) { openCfg(); throw new Error('APIキー未設定'); }
-  const res = await fetch(`${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${key}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [
-      { inline_data: { mime_type: imgMime, data: imgB64 } },
-      { text: prompt }
-    ]}] })
-  });
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    const msg = e?.error?.message || '';
-    if (res.status === 429 || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED'))
-      throw new Error('無料枠の上限に達しました。しばらく待ってから再試行してください。');
-    if (res.status === 400 || res.status === 403)
-      throw new Error('APIキーが正しくありません。⚙設定を確認してください。');
-    throw new Error(msg || `エラー(${res.status})`);
+  if (!key) { openCfg(); throw new Error('APIキーが未設定です'); }
+
+  let lastErr = '';
+  for (const model of MODELS) {
+    try {
+      const res = await fetch(`${GEMINI_API}/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: imgMime, data: imgB64 } },
+            { text: prompt }
+          ]}],
+          generationConfig: { temperature: 0 }
+        })
+      });
+
+      if (res.status === 429) { lastErr = '無料枠の上限に達しました。しばらく待ってから再試行してください。'; continue; }
+      if (res.status === 403 || res.status === 400) {
+        const e = await res.json().catch(()=>({}));
+        const msg = e?.error?.message || '';
+        if (msg.includes('not found') || msg.includes('見つからない')) { lastErr = `モデル${model}未対応`; continue; }
+        throw new Error('APIキーが正しくありません。⚙設定を確認してください。');
+      }
+      if (!res.ok) { const e = await res.json().catch(()=>({})); lastErr = e?.error?.message || `HTTP${res.status}`; continue; }
+
+      const json = await res.json();
+      const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return raw.replace(/```[a-z]*\n?|```/g,'').trim();
+
+    } catch(e) {
+      if (e.message.includes('APIキー')) throw e;
+      lastErr = e.message;
+    }
   }
-  const json = await res.json();
-  const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return raw.replace(/```[a-z]*\n?|```/g, '').trim();
+  throw new Error(lastErr || 'AIに接続できませんでした');
 }
 
-// ── 全項目AI読み取り（一切のノイズを完全に排除した高精度仕様） ──────────────────
+// ── 全項目読み取り ────────────────────────────────
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('errorActions').style.display = 'none';
   showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
-  document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
 
-  const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
+  const prompt = `あなたは展示会ヒアリングシートのOCR専用AIです。
 【絶対ルール】
-・実際に写真に写っているチェック・文字のみを返すこと
-・チェックが入っていない選択肢は返さないこと
-・写真の左上に名刺が貼付されている場合のみ名刺情報を読み取る
-・白紙・未記入の場合は全項目空文字で返す
+・実際に写真に写っているチェック・文字のみ返す
+・チェックなし項目は返さない
+・左上に名刺がある場合のみ名刺情報を読み取る
+・白紙・未記入は全項目空文字
 ・推測・補完は絶対禁止
-・JSONのみを返す（説明文不要）
+・JSONのみ返す（説明文不要）
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"","q1":"","q1_other":"","q2":"","q2_other":"","q3":"","q3_other":"","q4":"","q4_other":"","q5":"","q5_other":"","q6":"","q6_other":"","q7":"","q7_other":"","q8":"","q8_visit_time":"","memo":""}`;
 
   try {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
-    
-    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
-      fill(data);
-      const rank = calcRank(data);
-      renderRank(rank);
-      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>AIの内容に切り替えました</strong><br>必要に応じて微調整し、スプレッドシートに送信してください。</div>`;
-    } else {
-      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
-    }
-    
-    document.getElementById('submitBtn').disabled = false; 
-    showSt('success', '✅ 読み取り完了！内容を確認して送信してください');
+    fill(data);
+    const rank = calcRank(data);
+    renderRank(rank);
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>読み取り完了 — 内容を確認・修正してから送信してください</strong><br>ラジオボタンをタップで変更、テキスト欄も編集できます。</div>`;
+    setTimeout(() => {
+      document.getElementById('resultArea').style.display = 'block';
+      showSt('success', '✅ 読み取り完了！');
+      setTimeout(() => document.getElementById('rankDisplay').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+    }, 100);
   } catch (err) {
-    showSt('error', '読み取りエラー: ' + err.message);
+    showSt('error', 'エラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
-    document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⚠️ <strong>AI読み取りに失敗しました</strong><br>下のフォームからそのまま手動で入力・送信するか、名刺のみ読取をお試しください。</div>`;
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
 }
 
-// ── 名刺だけ読み取る（エラー時の応急処置） ────────
+// ── 名刺だけ読み取る ─────────────────────────────
 async function readCardOnly() {
   if (!imgB64) return;
   document.getElementById('errorActions').style.display = 'none';
   showSt('loading', '名刺情報だけ読み取り中...');
 
-  const prompt = `この写真の左上に貼付された名刺の情報だけを読み取ってください。名刺がない場合は全て空文字にしてください。推測禁止。JSONのみ返す。
+  const prompt = `この写真の左上に貼付された名刺の情報だけを読み取ってください。名刺がなければ全て空文字。推測禁止。JSONのみ返す。
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":""}`;
 
   try {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
-    
-    if (confirm("名刺の解析が完了しました。名刺情報欄をAIの内容に切り替えますか？")) {
-      document.getElementById('f_company').value    = data.card_company    || '';
-      document.getElementById('f_department').value = data.card_department || '';
-      document.getElementById('f_name').value       = data.card_name       || '';
-      document.getElementById('f_phone').value      = data.card_phone      || '';
-      document.getElementById('f_email').value      = data.card_email      || '';
-      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を反映しました</strong><br>残りのアンケート項目は手動で補完して送信してください。</div>`;
-    }
-    
-    document.getElementById('submitBtn').disabled = false; 
-    document.getElementById('rankDisplay').innerHTML = '';
-    showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
+    document.getElementById('f_company').value    = data.card_company    || '';
+    document.getElementById('f_department').value = data.card_department || '';
+    document.getElementById('f_name').value       = data.card_name       || '';
+    document.getElementById('f_phone').value      = data.card_phone      || '';
+    document.getElementById('f_email').value      = data.card_email      || '';
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>Q1〜Q8は下のボタンをタップして手動で入力してください。</div>`;
+    setTimeout(() => {
+      document.getElementById('resultArea').style.display = 'block';
+      showSt('success', '✅ 名刺読み取り完了！');
+      setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+    }, 100);
   } catch (err) {
-    showSt('error', '名刺読み取りエラー: ' + err.message);
+    showSt('error', 'エラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
   }
 }
 
+// ── 手動入力モード ────────────────────────────────
 function openManual() {
+  clearFields();
+  document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
   document.getElementById('rankDisplay').innerHTML = '';
-  document.getElementById('submitBtn').disabled = false; 
-  document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力モード</strong><br>項目を直接修正・タップして送信してください。</div>`;
+  document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">✏️ <strong>手動入力モード</strong><br>各項目をタップして入力し、スプレッドシートに送信してください。</div>`;
   document.getElementById('errorActions').style.display = 'none';
   hideSt();
+  setTimeout(() => {
+    document.getElementById('resultArea').style.display = 'block';
+    setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+  }, 100);
 }
 
+// ── フィールド ─────────────────────────────────────
 function fill(d) {
   document.getElementById('f_company').value    = d.card_company    || '';
   document.getElementById('f_department').value = d.card_department || '';
@@ -500,7 +496,6 @@ function fill(d) {
   document.getElementById('f_q7_other').value   = d.q7_other        || '';
   document.getElementById('f_q8_time').value    = d.q8_visit_time   || '';
   document.getElementById('f_memo').value       = d.memo            || '';
-  
   ['q1','q2','q3','q4','q5','q6','q7','q8'].forEach(key => {
     if (!d[key]) return;
     const val = d[key].trim();
@@ -516,7 +511,7 @@ function getRadio(name) {
 }
 
 function collect() {
-  const d = {
+  return {
     card_company:    document.getElementById('f_company').value.trim(),
     card_department: document.getElementById('f_department').value.trim(),
     card_name:       document.getElementById('f_name').value.trim(),
@@ -525,25 +520,16 @@ function collect() {
     exhibition:      document.getElementById('f_exhibition').value.trim(),
     date:            document.getElementById('f_date').value.trim(),
     staff:           document.getElementById('f_staff').value.trim(),
-    q1:              getRadio('q1'),
-    q1_other:        document.getElementById('f_q1_other').value.trim(),
-    q2:              getRadio('q2'),
-    q2_other:        document.getElementById('f_q2_other').value.trim(),
-    q3:              getRadio('q3'),
-    q3_other:        document.getElementById('f_q3_other').value.trim(),
-    q4:              getRadio('q4'),
-    q4_other:        document.getElementById('f_q4_other').value.trim(),
-    q5:              getRadio('q5'),
-    q5_other:        document.getElementById('f_q5_other').value.trim(),
-    q6:              getRadio('q6'),
-    q6_other:        document.getElementById('f_q6_other').value.trim(),
-    q7:              getRadio('q7'),
-    q7_other:        document.getElementById('f_q7_other').value.trim(),
-    q8:              getRadio('q8'),
-    q8_visit_time:   document.getElementById('f_q8_time').value.trim(),
-    memo:            document.getElementById('f_memo').value.trim(),
+    q1: getRadio('q1'), q1_other: document.getElementById('f_q1_other').value.trim(),
+    q2: getRadio('q2'), q2_other: document.getElementById('f_q2_other').value.trim(),
+    q3: getRadio('q3'), q3_other: document.getElementById('f_q3_other').value.trim(),
+    q4: getRadio('q4'), q4_other: document.getElementById('f_q4_other').value.trim(),
+    q5: getRadio('q5'), q5_other: document.getElementById('f_q5_other').value.trim(),
+    q6: getRadio('q6'), q6_other: document.getElementById('f_q6_other').value.trim(),
+    q7: getRadio('q7'), q7_other: document.getElementById('f_q7_other').value.trim(),
+    q8: getRadio('q8'), q8_visit_time: document.getElementById('f_q8_time').value.trim(),
+    memo: document.getElementById('f_memo').value.trim(),
   };
-  return d;
 }
 
 // ── 送信 ──────────────────────────────────────────
@@ -553,8 +539,8 @@ async function submitData() {
   showSt('loading', 'スプレッドシートに送信中...');
   const payload = collect();
   payload._rank   = calcRank(payload);
-  renderRank(payload._rank);
   payload._sentAt = new Date().toLocaleString('ja-JP');
+  renderRank(payload._rank);
   try {
     await fetch(GAS_URL, {
       method: 'POST', mode: 'no-cors',
@@ -588,6 +574,7 @@ function saveCfg() {
 }
 </script>
 
+<!-- 設定モーダル -->
 <div id="cfgOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;" onclick="if(event.target===this)closeCfg()">
   <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px 20px 48px;max-height:80vh;overflow-y:auto;">
     <div style="width:36px;height:4px;background:#ddd;border-radius:99px;margin:0 auto 18px;"></div>
