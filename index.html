@@ -321,6 +321,7 @@ function doReset() {
   document.getElementById('rankDisplay').innerHTML = '';
   document.getElementById('modeBanner').innerHTML = '';
   document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
+  document.getElementById('submitBtn').disabled = false; // 送信ボタン状態リセット
   clearFields();
   hideSt();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -345,6 +346,7 @@ function hideSt() { document.getElementById('status').className = 'status'; }
 
 // ── ランク ────────────────────────────────────────
 function calcRank(d) {
+  if (!d) return 'C';
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
   const urgent = /大至急|3ヶ月/.test(q2);
@@ -361,10 +363,10 @@ const RINFO = {
   C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
-  const i = RINFO[r];
+  const i = RINFO[r || 'C'];
   document.getElementById('rankDisplay').innerHTML = `
     <div class="rank-box ${i.cls}">
-      <div class="rank-circle">${r}</div>
+      <div class="rank-circle">${r || 'C'}</div>
       <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
     </div>`;
 }
@@ -415,10 +417,11 @@ async function analyze() {
 
   try {
     const clean = await callGemini(prompt);
-    const data  = JSON.parse(clean);
+    const data  = JSON.parse(clean || '{}');
     fill(data);
     const rank = calcRank(data);
     renderRank(rank);
+    document.getElementById('submitBtn').disabled = false; // 送信ボタンを使用可能にする
     document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>内容を修正できます</strong><br>ラジオボタンをタップで変更、テキスト欄も編集できます。</div>`;
     setTimeout(() => {
       document.getElementById('resultArea').style.display = 'block';
@@ -444,19 +447,19 @@ async function readCardOnly() {
 
   try {
     const clean = await callGemini(prompt);
-    const data  = JSON.parse(clean);
+    const data  = JSON.parse(clean || '{}');
     
-    // 名刺以外を一旦リセット
     clearFields();
     document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
 
-    // 名刺欄を設定
+    // 安全に名刺欄に値をセット
     document.getElementById('f_company').value    = data.card_company    || '';
     document.getElementById('f_department').value = data.card_department || '';
     document.getElementById('f_name').value       = data.card_name       || '';
     document.getElementById('f_phone').value      = data.card_phone      || '';
     document.getElementById('f_email').value      = data.card_email      || '';
     
+    document.getElementById('submitBtn').disabled = false; // ボタンのロックを確実に解除
     document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を読み取りました</strong><br>Q1〜Q8のアンケート項目は、以下のラジオボタンをタップして手動で入力してください。</div>`;
     document.getElementById('rankDisplay').innerHTML = '';
     
@@ -476,6 +479,7 @@ function openManual() {
   clearFields();
   document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
   document.getElementById('rankDisplay').innerHTML = '';
+  document.getElementById('submitBtn').disabled = false; // ボタンのロックを確実に解除
   document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力モード</strong><br>ラジオボタンをタップして選択し、必要な項目を入力してください。</div>`;
   document.getElementById('errorActions').style.display = 'none';
   hideSt();
@@ -487,6 +491,7 @@ function openManual() {
 
 // ── フィールド入出力 ──────────────────────────────
 function fill(d) {
+  if (!d) return;
   document.getElementById('f_company').value    = d.card_company    || '';
   document.getElementById('f_department').value = d.card_department || '';
   document.getElementById('f_name').value       = d.card_name       || '';
@@ -505,12 +510,11 @@ function fill(d) {
   document.getElementById('f_q8_time').value    = d.q8_visit_time   || '';
   document.getElementById('f_memo').value       = d.memo            || '';
   
-  // ラジオボタンを部分一致でセット (q8のキー名の処理を修正)
   const keys = ['q1','q2','q3','q4','q5','q6','q7','q8'];
   keys.forEach(key => {
     const dataKey = (key === 'q8') ? 'q8_visit_time' : key;
     if (!d[dataKey]) return;
-    const val = d[dataKey].trim();
+    const val = String(d[dataKey]).trim();
     document.querySelectorAll(`input[name="${key}"]`).forEach(rb => {
       if (val.includes(rb.value) || rb.value.includes(val)) rb.checked = true;
     });
@@ -523,7 +527,7 @@ function getRadio(name) {
 }
 
 function collect() {
-  const d = {
+  return {
     card_company:    document.getElementById('f_company').value.trim(),
     card_department: document.getElementById('f_department').value.trim(),
     card_name:       document.getElementById('f_name').value.trim(),
@@ -550,7 +554,6 @@ function collect() {
     q8_visit_time:   document.getElementById('f_q8_time').value.trim(),
     memo:            document.getElementById('f_memo').value.trim(),
   };
-  return d;
 }
 
 // ── 送信 ──────────────────────────────────────────
@@ -560,7 +563,6 @@ async function submitData() {
   showSt('loading', 'スプレッドシートに送信中...');
   const payload = collect();
   payload._rank   = calcRank(payload);
-  // ランク表示を更新
   renderRank(payload._rank);
   payload._sentAt = new Date().toLocaleString('ja-JP');
   try {
