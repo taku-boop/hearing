@@ -277,7 +277,7 @@ function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択（無料枠エラーを確実に防ぎつつ、文字の視認性を保つ自動軽量化） ──────────────────
+// ── ファイル選択（エラーなく確実に動く自動縮小ロジック） ──────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -287,25 +287,21 @@ function onFile(input) {
     img.onload = () => {
       const canvas = document.createElement('canvas');
       
-      // 無料枠のトークン制限（1分間あたりの容量）を確実に回避する最大サイズ（横幅1200px）に「勝手に自動縮小」
-      const MAX = 1200; 
+      // 元コードと同じ完璧なリサイズサイズ（横幅最大1600px）
+      const MAX = 1600; 
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
       if (h > MAX) { w = Math.round(w * MAX / h); w = MAX; }
-      
       canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
       
-      // 縮小してもチェックの線や文字の輪郭がボケないように最高品質で描画
+      const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = High; 
+      ctx.imageSmoothingQuality = 'high'; // ←ココの大文字エラーを修正しました
       ctx.drawImage(img, 0, 0, w, h);
       
-      // 画質を82%に落としてデータサイズを一気に軽量化（これで無料枠エラーを完全シャットアウト）
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82); 
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 元コード通りの一番高精度な圧縮率
       imgB64 = dataUrl.split(',')[1];
       imgMime = 'image/jpeg';
-      
       document.getElementById('previewImg').src = dataUrl;
       document.getElementById('uploadZone').style.display  = 'none';
       document.getElementById('cameraBtn').style.display   = 'none';
@@ -313,10 +309,10 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像選択の瞬間にフォームを即表示（待つ間の手修正を可能にする）
+      // 画像選択の瞬間にフォームを即表示（手動入力を完全に両立）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('submitBtn').disabled = false;
-      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと自動リサイズされたデータで解析が始まります。待つ間の手動入力も可能です。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
       
       hideSt();
     };
@@ -412,7 +408,7 @@ async function callGemini(prompt) {
   return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
-// ── 全項目AI読み取り（あなたが提示してくれた一番最初のオリジナルプロンプトを完全復元） ──
+// ── 全項目AI読み取り ──────────────────────────────
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
@@ -420,7 +416,6 @@ async function analyze() {
   showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
   document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
 
-  // オリジナルの最高精度プロンプト構造
   const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
 【絶対ルール】
 ・実際に写真に写っているチェック・文字のみを返すこと
@@ -435,7 +430,6 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
     
-    // 待機中にユーザーが入力を進めていた場合を考慮して確認を挟む
     if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
       fill(data);
       const rank = calcRank(data);
@@ -496,7 +490,7 @@ function openManual() {
   hideSt();
 }
 
-// ── フィールド入出力（オリジナルの高精度ロジック） ──
+// ── フィールド入出力 ──
 function fill(d) {
   document.getElementById('f_company').value    = d.card_company    || '';
   document.getElementById('f_department').value = d.card_department || '';
@@ -516,7 +510,6 @@ function fill(d) {
   document.getElementById('f_q8_time').value    = d.q8_visit_time   || '';
   document.getElementById('f_memo').value       = d.memo            || '';
   
-  // ラジオボタンの完璧な連動
   ['q1','q2','q3','q4','q5','q6','q7','q8'].forEach(key => {
     if (!d[key]) return;
     const val = d[key].trim();
