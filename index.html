@@ -277,30 +277,24 @@ function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
+// ── ファイル選択（一番最初の「超高精度で動いていた設定」に完全復元） ──────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
-  
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX = 1400; // 無料枠に嫌われない安定サイズまで軽量化
+      const MAX = 1600; // 元コード通りの完璧な圧縮比率
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
       if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-      
       canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, w, h);
-      
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 元コードと同じ画質
       imgB64 = dataUrl.split(',')[1];
       imgMime = 'image/jpeg';
-      
       document.getElementById('previewImg').src = dataUrl;
       document.getElementById('uploadZone').style.display  = 'none';
       document.getElementById('cameraBtn').style.display   = 'none';
@@ -308,10 +302,10 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像選択時に必ずフォームを表示。AIが停止していてもそのまま手動入力可能に
+      // 【追加機能】画像選択と同時にフォームを即開く（待機中も入力可能にする）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('submitBtn').disabled = false;
-      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI解析の準備ができました</strong><br>「AIで全項目を読み取る」を押して解析を行えます。このまま手動で入力して進めることも可能です。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
       
       hideSt();
     };
@@ -346,6 +340,7 @@ function clearFields() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
 }
 
+// ── ステータス ────────────────────────────────────
 function showSt(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -354,8 +349,8 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
+// ── ランク ────────────────────────────────────────
 function calcRank(d) {
-  if (!d) return 'C';
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
   const urgent = /大至急|3ヶ月/.test(q2);
@@ -372,14 +367,15 @@ const RINFO = {
   C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'案件なし・他業種・営業来訪' },
 };
 function renderRank(r) {
-  const i = RINFO[r || 'C'];
+  const i = RINFO[r];
   document.getElementById('rankDisplay').innerHTML = `
     <div class="rank-box ${i.cls}">
-      <div class="rank-circle">${r || 'C'}</div>
+      <div class="rank-circle">${r}</div>
       <div class="rank-info"><strong>${i.label}</strong><span>${i.desc}</span></div>
     </div>`;
 }
 
+// ── Gemini呼び出し共通 ───────────────────────────
 async function callGemini(prompt) {
   const key = getKey();
   if (!key) { openCfg(); throw new Error('APIキー未設定'); }
@@ -395,7 +391,7 @@ async function callGemini(prompt) {
     const e = await res.json().catch(() => ({}));
     const msg = e?.error?.message || '';
     if (res.status === 429 || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED'))
-      throw new Error('無料枠の上限（Google制限）に達しました。新しいAPIキーに差し替えるか、しばらく待ってからお試しください。');
+      throw new Error('無料枠の上限に達しました。しばらく待ってから再試行してください。');
     if (res.status === 400 || res.status === 403)
       throw new Error('APIキーが正しくありません。⚙設定を確認してください。');
     throw new Error(msg || `エラー(${res.status})`);
@@ -405,13 +401,15 @@ async function callGemini(prompt) {
   return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
+// ── 全項目AI読み取り（オリジナルプロンプト完全復元） ──
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('errorActions').style.display = 'none';
-  showSt('loading', 'AIが全項目を解析中...（10〜20秒）');
-  document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析中も下の入力欄は自由に編集可能です。エラーが出てもそのまま送信できます。</div>`;
+  showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
+  document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
 
+  // 一番最初に入っていた「超高精度プロンプト」を文字一つ変えずに完全復元
   const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
 【絶対ルール】
 ・実際に写真に写っているチェック・文字のみを返すこと
@@ -424,39 +422,41 @@ async function analyze() {
 
   try {
     const clean = await callGemini(prompt);
-    const data  = JSON.parse(clean || '{}');
+    const data  = JSON.parse(clean);
     
-    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映しますか？\n（『キャンセル』を選ぶと、今手動で入力している内容が残ります）")) {
+    // 【追加機能】待機中にユーザーが入力を進めていた場合を考慮して確認を挟む
+    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
       fill(data);
       const rank = calcRank(data);
       renderRank(rank);
-      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>AIの内容を反映しました</strong><br>スプレッドシートに送信してください。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>AIの内容に切り替えました</strong><br>必要に応じて微調整し、スプレッドシートに送信してください。</div>`;
     } else {
-      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>現在の入力を継続中</strong><br>AIの上書きをキャンセルしました。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
     }
     
-    document.getElementById('submitBtn').disabled = false;
-    showSt('success', '✅ 解析処理が完了しました。');
+    document.getElementById('submitBtn').disabled = false; // 送信ボタンのロックを確実に外す
+    showSt('success', '✅ 読み取り完了！内容を確認して送信してください');
   } catch (err) {
-    showSt('error', '読み取り制限エラー: ' + err.message);
+    showSt('error', '読み取りエラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
-    document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⚠️ <strong>無料枠エラー（Googleによるロック状態）</strong><br>新しいAPIキーを再生成して⚙設定に入れるか、このまま下のフォームを手動入力して送信してください。</div>`;
+    document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⚠️ <strong>AI読み取りに失敗しました</strong><br>下のフォームからそのまま手動で入力・送信するか、名刺のみ読取をお試しください。</div>`;
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
 }
 
+// ── 名刺だけ読み取る（エラー時の応急処置） ────────
 async function readCardOnly() {
   if (!imgB64) return;
   document.getElementById('errorActions').style.display = 'none';
   showSt('loading', '名刺情報だけ読み取り中...');
 
-  const prompt = `この写真の左上に貼付された名刺の情報だけを確実かつ正確に読み取ってください。名刺がない場合は全て空文字にしてください。推測禁止。JSONのみ返す。
+  const prompt = `この写真の左上に貼付された名刺の情報だけを読み取ってください。名刺がない場合は全て空文字にしてください。推測禁止。JSONのみ返す。
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":""}`;
 
   try {
     const clean = await callGemini(prompt);
-    const data  = JSON.parse(clean || '{}');
+    const data  = JSON.parse(clean);
     
     if (confirm("名刺の解析が完了しました。名刺情報欄をAIの内容に切り替えますか？")) {
       document.getElementById('f_company').value    = data.card_company    || '';
@@ -464,28 +464,29 @@ async function readCardOnly() {
       document.getElementById('f_name').value       = data.card_name       || '';
       document.getElementById('f_phone').value      = data.card_phone      || '';
       document.getElementById('f_email').value      = data.card_email      || '';
-      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を反映しました</strong><br>残りの項目は手動で補完して送信してください。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を反映しました</strong><br>残りのアンケート項目は手動で補完して送信してください。</div>`;
     }
     
-    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').disabled = false; // 送信ボタンのロックを確実に外す
     document.getElementById('rankDisplay').innerHTML = '';
-    showSt('success', '✅ 名刺の読み込み処理が終了しました');
+    showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
   } catch (err) {
     showSt('error', '名刺読み取りエラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
   }
 }
 
+// ── 手動入力モード ────────────────────────────────
 function openManual() {
   document.getElementById('rankDisplay').innerHTML = '';
-  document.getElementById('submitBtn').disabled = false;
-  document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力モード</strong><br>項目を直接入力して送信してください。</div>`;
+  document.getElementById('submitBtn').disabled = false; // 送信ボタンのロックを確実に外す
+  document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力モード</strong><br>項目を直接修正・タップして送信してください。</div>`;
   document.getElementById('errorActions').style.display = 'none';
   hideSt();
 }
 
+// ── フィールド入出力（オリジナルロジック完全復元） ──
 function fill(d) {
-  if (!d) return;
   document.getElementById('f_company').value    = d.card_company    || '';
   document.getElementById('f_department').value = d.card_department || '';
   document.getElementById('f_name').value       = d.card_name       || '';
@@ -504,11 +505,10 @@ function fill(d) {
   document.getElementById('f_q8_time').value    = d.q8_visit_time   || '';
   document.getElementById('f_memo').value       = d.memo            || '';
   
-  const keys = ['q1','q2','q3','q4','q5','q6','q7','q8'];
-  keys.forEach(key => {
-    const dataKey = (key === 'q8') ? 'q8_visit_time' : key;
-    if (!d[dataKey]) return;
-    const val = String(d[dataKey]).trim();
+  // ラジオボタンの完璧な連動（オリジナルを完全維持）
+  ['q1','q2','q3','q4','q5','q6','q7','q8'].forEach(key => {
+    if (!d[key]) return;
+    const val = d[key].trim();
     document.querySelectorAll(`input[name="${key}"]`).forEach(rb => {
       if (val.includes(rb.value) || rb.value.includes(val)) rb.checked = true;
     });
@@ -521,7 +521,7 @@ function getRadio(name) {
 }
 
 function collect() {
-  return {
+  const d = {
     card_company:    document.getElementById('f_company').value.trim(),
     card_department: document.getElementById('f_department').value.trim(),
     card_name:       document.getElementById('f_name').value.trim(),
@@ -548,8 +548,10 @@ function collect() {
     q8_visit_time:   document.getElementById('f_q8_time').value.trim(),
     memo:            document.getElementById('f_memo').value.trim(),
   };
+  return d;
 }
 
+// ── 送信 ──────────────────────────────────────────
 async function submitData() {
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -572,6 +574,7 @@ async function submitData() {
   }
 }
 
+// ── 設定 ──────────────────────────────────────────
 function openCfg() {
   const k = getKey();
   document.getElementById('s_key').value = k;
