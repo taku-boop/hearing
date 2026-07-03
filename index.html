@@ -301,7 +301,12 @@ function onFile(input) {
       document.getElementById('previewWrap').style.display = 'block';
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
-      document.getElementById('resultArea').style.display  = 'none';
+      
+      // 画像が入った瞬間に、入力フォームエリアを即表示（読み込み中の手動入力を可能に）
+      document.getElementById('resultArea').style.display  = 'block';
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
+      
       hideSt();
     };
     img.src = e.target.result;
@@ -321,7 +326,7 @@ function doReset() {
   document.getElementById('rankDisplay').innerHTML = '';
   document.getElementById('modeBanner').innerHTML = '';
   document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
-  document.getElementById('submitBtn').disabled = false; // 送信ボタン状態リセット
+  document.getElementById('submitBtn').disabled = false;
   clearFields();
   hideSt();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -402,8 +407,8 @@ async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('errorActions').style.display = 'none';
-  document.getElementById('resultArea').style.display = 'none';
   showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
+  document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
 
   const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
 【絶対ルール】
@@ -418,19 +423,23 @@ async function analyze() {
   try {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean || '{}');
-    fill(data);
-    const rank = calcRank(data);
-    renderRank(rank);
-    document.getElementById('submitBtn').disabled = false; // 送信ボタンを使用可能にする
-    document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>内容を修正できます</strong><br>ラジオボタンをタップで変更、テキスト欄も編集できます。</div>`;
-    setTimeout(() => {
-      document.getElementById('resultArea').style.display = 'block';
-      showSt('success', '✅ 読み取り完了！内容を確認して送信してください');
-      setTimeout(() => document.getElementById('rankDisplay').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
-    }, 100);
+    
+    // 待機中にユーザーが記入したかもしれないので確認を挟む
+    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
+      fill(data);
+      const rank = calcRank(data);
+      renderRank(rank);
+      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>AIの内容に切り替えました</strong><br>必要に応じて微調整し、スプレッドシートに送信してください。</div>`;
+    } else {
+      document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
+    }
+    
+    document.getElementById('submitBtn').disabled = false;
+    showSt('success', '✅ 解析プロセス終了。内容を確認して送信してください');
   } catch (err) {
     showSt('error', '読み取りエラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
+    document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⚠️ <strong>AI読み取りに失敗しました</strong><br>下のフォームからそのまま手動で入力・送信するか、名刺のみ読取をお試しください。</div>`;
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
@@ -449,25 +458,18 @@ async function readCardOnly() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean || '{}');
     
-    clearFields();
-    document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
-
-    // 安全に名刺欄に値をセット
-    document.getElementById('f_company').value    = data.card_company    || '';
-    document.getElementById('f_department').value = data.card_department || '';
-    document.getElementById('f_name').value       = data.card_name       || '';
-    document.getElementById('f_phone').value      = data.card_phone      || '';
-    document.getElementById('f_email').value      = data.card_email      || '';
+    if (confirm("名刺の解析が完了しました。名刺情報欄をAIの内容に切り替えますか？")) {
+      document.getElementById('f_company').value    = data.card_company    || '';
+      document.getElementById('f_department').value = data.card_department || '';
+      document.getElementById('f_name').value       = data.card_name       || '';
+      document.getElementById('f_phone').value      = data.card_phone      || '';
+      document.getElementById('f_email').value      = data.card_email      || '';
+      document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を反映しました</strong><br>残りのアンケート項目は手動で補完してください。</div>`;
+    }
     
-    document.getElementById('submitBtn').disabled = false; // ボタンのロックを確実に解除
-    document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">🪪 <strong>名刺情報を読み取りました</strong><br>Q1〜Q8のアンケート項目は、以下のラジオボタンをタップして手動で入力してください。</div>`;
+    document.getElementById('submitBtn').disabled = false;
     document.getElementById('rankDisplay').innerHTML = '';
-    
-    setTimeout(() => {
-      document.getElementById('resultArea').style.display = 'block';
-      showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
-      setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
-    }, 100);
+    showSt('success', '✅ 名刺の読み込みプロセスが完了しました');
   } catch (err) {
     showSt('error', '名刺読み取りエラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
@@ -476,17 +478,11 @@ async function readCardOnly() {
 
 // ── 手動入力モード ────────────────────────────────
 function openManual() {
-  clearFields();
-  document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
   document.getElementById('rankDisplay').innerHTML = '';
-  document.getElementById('submitBtn').disabled = false; // ボタンのロックを確実に解除
-  document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力モード</strong><br>ラジオボタンをタップして選択し、必要な項目を入力してください。</div>`;
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">✏️ <strong>手動入力継続中</strong><br>必要な項目を編集・入力して送信してください。</div>`;
   document.getElementById('errorActions').style.display = 'none';
   hideSt();
-  setTimeout(() => {
-    document.getElementById('resultArea').style.display = 'block';
-    setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
-  }, 100);
 }
 
 // ── フィールド入出力 ──────────────────────────────
