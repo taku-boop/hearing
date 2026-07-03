@@ -302,7 +302,7 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像が入った瞬間に、入力フォームエリアを即表示（待機中の手動入力を可能に）
+      // 画像が入った瞬きに入力フォームを即表示（精度を保ったまま先に入力可能にする）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('submitBtn').disabled = false;
       document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
@@ -410,6 +410,7 @@ async function analyze() {
   showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
   document.getElementById('modeBanner').innerHTML = `<div class="edit-banner">⏱️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
 
+  // 元の超高精度プロンプト構造に完全巻き戻し
   const prompt = `あなたは展示会ヒアリングシートのOCR読み取り専用AIです。
 【絶対ルール】
 ・実際に写真に写っているチェック・文字のみを返すこと
@@ -424,8 +425,8 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean || '{}');
     
-    // 待機中にユーザーが記入したかもしれないので確認を挟む
-    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
+    // 待機中の手動入力を消してしまわないための防衛ポップアップ
+    if (confirm("AIの読み取りが完了しました。解析した高精度内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
       fill(data);
       const rank = calcRank(data);
       renderRank(rank);
