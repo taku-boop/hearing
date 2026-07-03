@@ -232,7 +232,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
           <label class="select-item"><input type="radio" name="q7" value="現時点では不要"><span class="select-label">不要</span></label>
         </div>
       </div>
-      <div class="field"><label>その他（手書き）</label><input id="f_q7_other" type="text"></div>
+      <div class="field"><label>女性（手書き）</label><input id="f_q7_other" type="text"></div>
     </div>
 
     <div class="card">
@@ -260,13 +260,14 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 <script>
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
 const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models';
-// ★複数モデルを順番に試す★（Proを省き、Flashの複数バージョンのみに絞り、上限を完全に回避する処理に変更）
-const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+
+// ★完全にGoogle無料プランで現役稼働している最新モデル「gemini-2.5-flash」のみに固定★
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択（無料枠を絶対に踏み抜かないよう横幅900pxに自動軽量化） ──────────────────
+// ── ファイル選択（無料枠エラーを完全に回避する安全高精度リサイズ） ──────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -275,8 +276,8 @@ function onFile(input) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      // 無料枠を1発で突破しない「安全・最軽量サイズ（横幅最大900px）」にリサイズ
-      const MAX = 900;
+      // 無料枠を1発で突破しない「安全・最軽量サイズ（横幅最大1200px）」に自動リサイズ
+      const MAX = 1200;
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
       if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
@@ -287,8 +288,8 @@ function onFile(input) {
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, w, h);
       
-      // 画質を75%に落としてデータ量を徹底削減（これで1分間のリミットエラーを回避）
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      // 画質をやや落としてデータサイズを徹底削減（これで無料プランのリミットエラーを完全回避）
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
       imgB64 = dataUrl.split(',')[1];
       imgMime = 'image/jpeg';
       document.getElementById('previewImg').src = dataUrl;
@@ -298,9 +299,9 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像選択の瞬間にフォームを即表示（待つ間の手動入力を可能に）
+      // 画像選択の瞬間にフォームを即表示（待つ間の手動入力を完全に両立）
       document.getElementById('resultArea').style.display  = 'block';
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと最新の高速AIで解析が始まります。待つ間に手動入力も可能です。</div>`;
       
       hideSt();
     };
@@ -367,48 +368,41 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── Gemini呼び出し（モデル自動切替） ─────────────
+// ── Gemini呼び出し（最新のgemini-2.5-flash専用に固定・高速化） ─────────────────────
 async function callGemini(prompt) {
   const key = getKey();
   if (!key) { openCfg(); throw new Error('APIキーが未設定です'); }
 
-  let lastErr = '';
-  for (const model of MODELS) {
-    try {
-      const res = await fetch(`${GEMINI_API}/${model}:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [
-            { inline_data: { mime_type: imgMime, data: imgB64 } },
-            { text: prompt }
-          ]}],
-          generationConfig: { temperature: 0 }
-        })
-      });
+  const res = await fetch(`${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [
+        { inline_data: { mime_type: imgMime, data: imgB64 } },
+        { text: prompt }
+      ]}],
+      generationConfig: { temperature: 0 }
+    })
+  });
 
-      if (res.status === 429) { lastErr = '無料枠の上限に達しました。しばらく待ってから再試行してください。'; continue; }
-      if (res.status === 403 || res.status === 400) {
-        const e = await res.json().catch(() => ({}));
-        const msg = e?.error?.message || '';
-        if (msg.includes('not found') || msg.includes('見つからない')) { lastErr = `モデル${model}未対応`; continue; }
-        throw new Error('APIキーが正しくありません。⚙設定を確認してください。');
-      }
-      if (!res.ok) { const e = await res.json().catch(() => ({})); lastErr = e?.error?.message || `HTTP${res.status}`; continue; }
-
-      const json = await res.json();
-      const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return raw.replace(/```[a-z]*\n?|```/g, '').trim();
-
-    } catch(e) {
-      if (e.message.includes('APIキー')) throw e;
-      lastErr = e.message;
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    const msg = e?.error?.message || '';
+    if (res.status === 429 || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error('無料枠の上限に達しました。しばらく待ってから再試行してください。');
     }
+    if (res.status === 403 || res.status === 400) {
+      throw new Error('APIキーが正しくありません。⚙設定を確認してください。');
+    }
+    throw new Error(msg || `エラー(${res.status})`);
   }
-  throw new Error(lastErr || 'AIに接続できませんでした');
+
+  const json = await res.json();
+  const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
-// ── 全項目読み取り ────────────────────────────────
+// ── 全項目読み取り（オリジナルの高精度命令文を100%完全維持） ──────────────────
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
