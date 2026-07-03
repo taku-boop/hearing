@@ -302,7 +302,7 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像が入った瞬間に、入力フォームエリアを即表示（読み込み中の手動入力を可能に）
+      // 画像が入った瞬間に、入力フォームエリアを即表示（待機中の手動入力を可能に）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('submitBtn').disabled = false;
       document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
