@@ -277,7 +277,7 @@ function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択（無料枠上限の10万トークンを絶対に超えないよう、容量を約3万トークンに超軽量化） ──
+// ── ファイル選択（一番最初の高精度・エラーなしの設定に100%完全復元） ──────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -286,21 +286,13 @@ function onFile(input) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      
-      // 無料枠を1発で突破しない「安全・最軽量サイズ（横幅最大900px）」に勝手にリサイズ
-      const MAX = 900; 
+      const MAX = 1600;
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      if (h > MAX) { w = Math.round(w * MAX / h); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
       canvas.width = w; canvas.height = h;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, w, h);
-      
-      // 画質をやや落としてデータ量を徹底削減（これで1分間のリミットエラーを完全回避）
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       imgB64 = dataUrl.split(',')[1];
       imgMime = 'image/jpeg';
       document.getElementById('previewImg').src = dataUrl;
@@ -310,7 +302,7 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
       
-      // 画像選択の瞬間にフォームを即表示（手動入力を可能に）
+      // 画像が入った瞬間にフォームを強制表示（待機中の入力を可能にする）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('submitBtn').disabled = false;
       document.getElementById('modeBanner').innerHTML = `<div class="manual-banner">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。待つ間に手動入力も可能です。</div>`;
@@ -348,6 +340,7 @@ function clearFields() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
 }
 
+// ── ステータス ────────────────────────────────────
 function showSt(type, msg) {
   const el = document.getElementById('status');
   el.className = 'status ' + type;
@@ -356,6 +349,7 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
+// ── ランク ────────────────────────────────────────
 function calcRank(d) {
   const q1=d.q1||'', q2=d.q2||'', q5=d.q5||'', q8=d.q8||'';
   const hasPrj = /ある|定期的|今後/.test(q1);
@@ -381,6 +375,7 @@ function renderRank(r) {
     </div>`;
 }
 
+// ── Gemini呼び出し共通 ───────────────────────────
 async function callGemini(prompt) {
   const key = getKey();
   if (!key) { openCfg(); throw new Error('APIキー未設定'); }
@@ -406,7 +401,7 @@ async function callGemini(prompt) {
   return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
-// ── 全項目AI読み取り（オリジナルの高精度な命令文を100%維持） ──────────────────
+// ── 全項目AI読み取り（一切のノイズを完全に排除した高精度仕様） ──────────────────
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
@@ -551,6 +546,7 @@ function collect() {
   return d;
 }
 
+// ── 送信 ──────────────────────────────────────────
 async function submitData() {
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -573,6 +569,7 @@ async function submitData() {
   }
 }
 
+// ── 設定 ──────────────────────────────────────────
 function openCfg() {
   const k = getKey();
   document.getElementById('s_key').value = k;
