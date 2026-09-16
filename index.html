@@ -228,6 +228,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
     <div class="card">
       <div class="sec-title">🧾 AIまとめ（自動生成・編集可）</div>
       <div class="field"><textarea id="f_summary" placeholder="AIがQ1・Q2・Q4・Q5・Q6・備考の内容から自動で要約します"></textarea></div>
+      <button class="btn btn-outline" type="button" onclick="regenSummary()">🔄 AIまとめを作成／更新する</button>
     </div>
 
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
@@ -236,7 +237,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 </div>
 
 <script>
-const GAS_URL    = 'https://script.google.com/macros/s/AKfycbxhH9mh8x6c_8Ql33QAZ83F2yb4cZRmcnLsGj5HaFJ6PjsAgbQMRyAomcToH0RqGO30/exec';
+const GAS_URL    = 'https://script.google.com/macros/s/AKfycbx5jh0o7YQ631nrO-oD1R5VtoMjbH3w2C7DDuCMMJ5G4gx4on0jYOFwzrLDg55rm81S/exec';
 const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // ★完全にGoogle無料プランで現役稼働している最新モデル「gemini-2.5-flash」のみに固定★
@@ -382,6 +383,67 @@ async function callGemini(prompt) {
   return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
+// ── テキストのみでGeminiを呼ぶ（AIまとめ生成専用） ─────────────────
+async function callGeminiText(prompt) {
+  const key = getKey();
+  if (!key) { openCfg(); throw new Error('APIキーが未設定です'); }
+
+  const res = await fetch(`${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [ { text: prompt } ] }],
+      generationConfig: { temperature: 0.3 }
+    })
+  });
+
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e?.error?.message || `エラー(${res.status})`);
+  }
+
+  const json = await res.json();
+  const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return raw.replace(/```[a-z]*\n?|```/g, '').trim();
+}
+
+// ── AIまとめ生成：Q1・Q2・Q4・Q5・Q6・備考の内容だけを渡して要約させる ──────
+function buildSummaryPrompt(d) {
+  const lines = [];
+  const q1 = [d.q1, d.q1_other].filter(Boolean).join('、');
+  const q2 = [d.q2, d.q2_other].filter(Boolean).join('、');
+  const q4 = [d.q4, d.q4_other].filter(Boolean).join('、');
+  const q5 = [d.q5, d.q5_other].filter(Boolean).join('、');
+  const q6 = [d.q6, d.q6_visit_time].filter(Boolean).join('、');
+  if (q1) lines.push(`興味のあるサービス: ${q1}`);
+  if (q2) lines.push(`スケジュール: ${q2}`);
+  if (q4) lines.push(`使用材質: ${q4}`);
+  if (q5) lines.push(`現在の課題: ${q5}`);
+  if (q6) lines.push(`工場見学: ${q6}`);
+  if (d.memo) lines.push(`備考: ${d.memo}`);
+  if (lines.length === 0) return null;
+  return `以下は展示会での来場者ヒアリング内容です。営業担当が読んですぐ状況を把握できるよう、日本語で2〜3文の要約を作成してください。
+【ルール】
+・書かれている内容だけを使い、書かれていないことは付け足さない
+・敬体（です・ます調）で自然な文章にする
+・説明文や前置きは不要。要約本文のみを返す
+
+【ヒアリング内容】
+${lines.join('\n')}`;
+}
+
+async function generateSummary(d) {
+  const prompt = buildSummaryPrompt(d);
+  if (!prompt) { document.getElementById('f_summary').value = ''; return; }
+  try {
+    const text = await callGeminiText(prompt);
+    document.getElementById('f_summary').value = text;
+  } catch (err) {
+    document.getElementById('f_summary').value = '';
+    console.error('AIまとめ生成エラー:', err.message);
+  }
+}
+
 // ── 全項目読み取り＋AIまとめ生成 ──────────────────────────────
 async function analyze() {
   if (!imgB64) return;
@@ -398,7 +460,6 @@ async function analyze() {
 ・白紙・未記入は全項目空文字（配列は空配列）
 ・推測・補完は絶対禁止
 ・Q1〜Q6は複数選択可のため、チェックされた選択肢をすべて配列で返す
-・"summary"のみ例外：Q1（興味のあるサービス）・Q2（スケジュール）・Q4（使用材質）・Q5（現在の課題）・Q6（工場見学）・備考（memo）の内容だけを使い、営業担当が読んですぐ状況が分かる日本語の要約文（2〜3文）を作成する。ここは推測ではなく、読み取った内容の要約作成なので実施してよい
 ・JSONのみ返す（説明文不要）
 {"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"",
 "q1":[],"q1_other":"",
@@ -407,8 +468,7 @@ async function analyze() {
 "q4":[],"q4_other":"",
 "q5":[],"q5_other":"",
 "q6":[],"q6_visit_time":"",
-"memo":"",
-"summary":""}`;
+"memo":""}`;
 
   try {
     const clean = await callGemini(prompt);
@@ -419,6 +479,9 @@ async function analyze() {
       const rank = calcRank(collect());
       renderRank(rank);
       document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>内容を修正できます</strong><br>チェックはタップで変更、テキスト欄・AIまとめも編集できます。</div>`;
+
+      showSt('loading', 'AIまとめを作成中...');
+      await generateSummary(collect());
     } else {
       document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
     }
@@ -521,6 +584,17 @@ function collect() {
     memo: document.getElementById('f_memo').value.trim(),
     summary: document.getElementById('f_summary').value.trim(),
   };
+}
+
+// ── AIまとめを手動で作成／更新（手動入力モードや修正後にも使える） ─────
+async function regenSummary() {
+  showSt('loading', 'AIまとめを作成中...');
+  try {
+    await generateSummary(collect());
+    showSt('success', '✅ AIまとめを更新しました');
+  } catch (err) {
+    showSt('error', 'AIまとめの作成に失敗しました: ' + err.message);
+  }
 }
 
 // ── 送信 ──────────────────────────────────────────
