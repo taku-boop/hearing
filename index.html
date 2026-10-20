@@ -456,7 +456,7 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
 
-    // AI解析完了後、自動的に入力欄にセット（確認を挟まず直感セット可能）
+    // ダイアログなしで即座にフォーム入力欄へセット
     fill(data);
     onRankChange();
     generateLocalSummary();
@@ -515,7 +515,7 @@ function setCheckedValues(name, values) {
   });
 }
 
-// AI解析データを入れる処理（全キー表記揺れ吸収）
+// フォームへデータを反映させるコア処理（IDとキー名を1対1で直結）
 function fill(d) {
   setCheckedValues('f_date', d.date);
   setCheckedValues('f_staff', d.staff);
@@ -538,7 +538,7 @@ function fill(d) {
   ['q1','q2','q3','q4','q5','q6'].forEach(key => setCheckedValues(key, d[key]));
 }
 
-// ── ★送信データの並び順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名...）★ ──
+// 送信データの並び順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名 ...）
 function collect() {
   return {
     _sentAt:    new Date().toLocaleString('ja-JP'),                          //  1. タイムスタンプ (A列)
