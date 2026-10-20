@@ -258,7 +258,8 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 </div>
 
 <script>
-const GAS_URL    = 'https://script.google.com/macros/s/AKfycbx5jh0o7YQ631nrO-oD1R5VtoMjbH3w2C7DDuCMMJ5G4gx4on0jYOFwzrLDg55rm81S/exec';
+// ご提示の最新GAS URLを設定済み
+const GAS_URL    = 'https://script.google.com/macros/s/AKfycbyyEw6CaCNsZ-GxnzIFOtYJtSsI33V-yjjhhTEcK9o6yTQN5UsKusoJrPDp6kHql57J/exec';
 const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
@@ -295,7 +296,7 @@ function onFile(input) {
       document.getElementById('errorActions').style.display = 'none';
 
       document.getElementById('resultArea').style.display  = 'block';
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと最新の高速AIで解析が始まります。待つ間に手動入力も可能です。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと解析が始まります。</div>`;
 
       hideSt();
     };
@@ -434,12 +435,12 @@ async function analyze() {
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('errorActions').style.display = 'none';
   showSt('loading', 'AIが全項目を読み取り中...（10〜20秒）');
-  document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>AI解析中...</strong><br>解析を待っている間も、下の項目は自由に入力・修正が可能です。</div>`;
+  document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>AI解析中...</strong></div>`;
 
   const prompt = `あなたは展示会ヒアリングシートのOCR専用AIです。
 【絶対ルール】
 ・画像から読み取れる情報をキーごとに抽出してください。
-・名刺が貼付されている場合は、会社名(company)、部署名(department)、氏名(name)、電話番号(phone)、メールアドレス(email)を正確に読み取ってください。
+・左上の名刺から会社名(company)、部署名(department)、氏名(name)、電話番号(phone)、メールアドレス(email)を正確に読み取ってください。
 ・推測・補完は厳禁です。
 ・JSONフォーマットのみを返してください。
 {"company":"","department":"","name":"","phone":"","email":"",
@@ -456,17 +457,16 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
 
-    // ダイアログなしで即座にフォーム入力欄へセット
     fill(data);
     onRankChange();
     generateLocalSummary();
-    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>AIの解析結果を反映しました</strong><br>タップで修正や追加入力が可能です。</div>`;
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>AIの解析結果を反映しました</strong><br>必要に応じて手動で微調整してください。</div>`;
 
     showSt('success', '✅ 読み取り完了！内容を確認して送信してください');
   } catch (err) {
     showSt('error', 'エラー: ' + err.message);
     document.getElementById('errorActions').style.display = 'block';
-    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">⚠️ <strong>AI読み取りに失敗しました</strong><br>下のフォームからそのまま手動で入力・送信するか、名刺のみ読取をお試しください。</div>`;
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">⚠️ <strong>AI読み取りに失敗しました</strong><br>下のフォームから手動で入力してください。</div>`;
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
@@ -489,7 +489,7 @@ async function readCardOnly() {
     document.getElementById('f_name').value       = data.name       || data.card_name       || '';
     document.getElementById('f_phone').value      = data.phone      || data.card_phone      || '';
     document.getElementById('f_email').value      = data.email      || data.card_email      || '';
-    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>項目は下のボタンをタップして手動で選択してください。</div>`;
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong></div>`;
 
     showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
   } catch (err) {
@@ -500,7 +500,7 @@ async function readCardOnly() {
 
 function openManual() {
   document.getElementById('rankDisplay').innerHTML = '';
-  document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">✏️ <strong>手動入力モード</strong><br>各項目をタップして入力し、スプレッドシートに送信してください。</div>`;
+  document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">✏️ <strong>手動入力モード</strong></div>`;
   document.getElementById('errorActions').style.display = 'none';
   hideSt();
 }
@@ -515,7 +515,6 @@ function setCheckedValues(name, values) {
   });
 }
 
-// フォームへデータを反映させるコア処理（IDとキー名を1対1で直結）
 function fill(d) {
   setCheckedValues('f_date', d.date);
   setCheckedValues('f_staff', d.staff);
@@ -538,7 +537,7 @@ function fill(d) {
   ['q1','q2','q3','q4','q5','q6'].forEach(key => setCheckedValues(key, d[key]));
 }
 
-// 送信データの並び順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名 ...）
+// ── ★送信データの並び順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名 ...）★ ──
 function collect() {
   return {
     _sentAt:    new Date().toLocaleString('ja-JP'),                          //  1. タイムスタンプ (A列)
