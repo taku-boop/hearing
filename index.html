@@ -130,35 +130,55 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
       <div class="field"><label>メールアドレス</label><input id="f_email" type="text" inputmode="email"></div>
     </div>
 
+    <!-- 基本情報（日付 → 対応者 → ランク の順に並び替え） -->
     <div class="card">
       <div class="sec-title">📋 基本情報</div>
-      <div class="field"><label>展示会名</label><input id="f_exhibition" type="text"></div>
-      <div class="field"><label>日付</label><input id="f_date" type="text"></div>
-      <div class="field"><label>対応者</label><input id="f_staff" type="text"></div>
+      <div class="field"><label>日付</label>
+        <div class="select-group">
+          <label class="select-item"><input type="checkbox" name="f_date" value="10月22日"><span class="select-label">10月22日</span></label>
+          <label class="select-item"><input type="checkbox" name="f_date" value="10月23日"><span class="select-label">10月23日</span></label>
+        </div>
+      </div>
+      <div class="field"><label>対応者</label>
+        <div class="select-group">
+          <label class="select-item"><input type="checkbox" name="f_staff" value="秋元"><span class="select-label">秋元</span></label>
+          <label class="select-item"><input type="checkbox" name="f_staff" value="山田"><span class="select-label">山田</span></label>
+          <label class="select-item"><input type="checkbox" name="f_staff" value="今堀"><span class="select-label">今堀</span></label>
+          <label class="select-item"><input type="checkbox" name="f_staff" value="坂"><span class="select-label">坂</span></label>
+        </div>
+      </div>
+      <div class="field"><label>ランク</label>
+        <div class="select-group">
+          <label class="select-item"><input type="checkbox" name="f_rank" value="A" onchange="onRankChange()"><span class="select-label">A</span></label>
+          <label class="select-item"><input type="checkbox" name="f_rank" value="B" onchange="onRankChange()"><span class="select-label">B</span></label>
+          <label class="select-item"><input type="checkbox" name="f_rank" value="C" onchange="onRankChange()"><span class="select-label">C</span></label>
+        </div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="sec-title">Q1 興味のあるサービス</div>
+      <div class="sec-title">Q1 開発・試作案件</div>
       <div class="field"><label>チェック内容（複数選択可・タップで変更可）</label>
         <div class="select-group">
-          <label class="select-item"><input type="checkbox" name="q1" value="真空注型"><span class="select-label">真空注型</span></label>
-          <label class="select-item"><input type="checkbox" name="q1" value="光造形"><span class="select-label">光造形</span></label>
-          <label class="select-item"><input type="checkbox" name="q1" value="デザイン"><span class="select-label">デザイン</span></label>
-          <label class="select-item"><input type="checkbox" name="q1" value="CG動画"><span class="select-label">CG動画</span></label>
+          <label class="select-item"><input type="checkbox" name="q1" value="ある"><span class="select-label">ある</span></label>
+          <label class="select-item"><input type="checkbox" name="q1" value="今後予定あり"><span class="select-label">今後予定あり</span></label>
+          <label class="select-item"><input type="checkbox" name="q1" value="定期的に発生している"><span class="select-label">定期的に発生</span></label>
+          <label class="select-item"><input type="checkbox" name="q1" value="現在はない"><span class="select-label">現在はない</span></label>
+          <label class="select-item"><input type="checkbox" name="q1" value="他業種 / 情報収集のみ"><span class="select-label">情報収集のみ</span></label>
         </div>
       </div>
-      <div class="field"><label>その他サービス（手書き）</label><input id="f_q1_other" type="text"></div>
+      <div class="field"><label>その他（手書き）</label><input id="f_q1_other" type="text"></div>
     </div>
 
     <div class="card">
       <div class="sec-title">Q2 スケジュール</div>
       <div class="field"><label>チェック内容（複数選択可・タップで変更可）</label>
         <div class="select-group">
-          <label class="select-item"><input type="checkbox" name="q2" value="大至急"><span class="select-label">大至急</span></label>
+          <label class="select-item"><input type="checkbox" name="q2" value="大至急（〜1ヶ月以内）"><span class="select-label">大至急</span></label>
           <label class="select-item"><input type="checkbox" name="q2" value="3ヶ月以内"><span class="select-label">3ヶ月以内</span></label>
           <label class="select-item"><input type="checkbox" name="q2" value="6ヶ月以内"><span class="select-label">6ヶ月以内</span></label>
           <label class="select-item"><input type="checkbox" name="q2" value="1年以内"><span class="select-label">1年以内</span></label>
-          <label class="select-item"><input type="checkbox" name="q2" value="未定/検討中"><span class="select-label">未定</span></label>
+          <label class="select-item"><input type="checkbox" name="q2" value="未定 / 検討中"><span class="select-label">未定/検討中</span></label>
         </div>
       </div>
       <div class="field"><label>その他（手書き）</label><input id="f_q2_other" type="text"></div>
@@ -169,9 +189,9 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
       <div class="field"><label>チェック内容（複数選択可・タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="checkbox" name="q3" value="試作・1点もの"><span class="select-label">試作・1点</span></label>
-          <label class="select-item"><input type="checkbox" name="q3" value="小ロット(〜100個)"><span class="select-label">小ロット</span></label>
-          <label class="select-item"><input type="checkbox" name="q3" value="中ロット(100〜1000個)"><span class="select-label">中ロット</span></label>
-          <label class="select-item"><input type="checkbox" name="q3" value="量産(1000個〜)"><span class="select-label">量産</span></label>
+          <label class="select-item"><input type="checkbox" name="q3" value="小ロット（〜100個）"><span class="select-label">小ロット</span></label>
+          <label class="select-item"><input type="checkbox" name="q3" value="中ロット（100〜1,000個）"><span class="select-label">中ロット</span></label>
+          <label class="select-item"><input type="checkbox" name="q3" value="量産（1,000個〜）"><span class="select-label">量産</span></label>
           <label class="select-item"><input type="checkbox" name="q3" value="未定"><span class="select-label">未定</span></label>
         </div>
       </div>
@@ -182,11 +202,11 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
       <div class="sec-title">Q4 使用材質</div>
       <div class="field"><label>チェック内容（複数選択可・タップで変更可）</label>
         <div class="select-group">
-          <label class="select-item"><input type="checkbox" name="q4" value="樹脂(プラスチック)"><span class="select-label">樹脂</span></label>
+          <label class="select-item"><input type="checkbox" name="q4" value="樹脂（プラスチック）"><span class="select-label">樹脂</span></label>
           <label class="select-item"><input type="checkbox" name="q4" value="金属・アルミ"><span class="select-label">金属</span></label>
           <label class="select-item"><input type="checkbox" name="q4" value="ゴム・エラストマー"><span class="select-label">ゴム</span></label>
           <label class="select-item"><input type="checkbox" name="q4" value="シリコン"><span class="select-label">シリコン</span></label>
-          <label class="select-item"><input type="checkbox" name="q4" value="複合材料(CFRP等)"><span class="select-label">複合材料</span></label>
+          <label class="select-item"><input type="checkbox" name="q4" value="複合材料（CFRP等）"><span class="select-label">複合材料</span></label>
           <label class="select-item"><input type="checkbox" name="q4" value="未定"><span class="select-label">未定</span></label>
         </div>
       </div>
@@ -194,7 +214,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
     </div>
 
     <div class="card">
-      <div class="sec-title">Q5 現在の課題</div>
+      <div class="sec-title">Q5 課題・お困りごと</div>
       <div class="field"><label>チェック内容（複数選択可・タップで変更可）</label>
         <div class="select-group">
           <label class="select-item"><input type="checkbox" name="q5" value="コストを下げたい"><span class="select-label">コスト削減</span></label>
@@ -202,7 +222,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
           <label class="select-item"><input type="checkbox" name="q5" value="品質・精度を上げたい"><span class="select-label">品質向上</span></label>
           <label class="select-item"><input type="checkbox" name="q5" value="設計・デザインから相談したい"><span class="select-label">設計相談</span></label>
           <label class="select-item"><input type="checkbox" name="q5" value="現在の発注先を変えたい"><span class="select-label">発注先変更</span></label>
-          <label class="select-item"><input type="checkbox" name="q5" value="特に課題なし"><span class="select-label">課題なし</span></label>
+          <label class="select-item"><input type="checkbox" name="q5" value="特に課題なし"><span class="select-label">特に課題なし</span></label>
         </div>
       </div>
       <div class="field"><label>その他（手書き）</label><input id="f_q5_other" type="text"></div>
@@ -226,9 +246,9 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
     </div>
 
     <div class="card">
-      <div class="sec-title">🧾 AIまとめ（自動生成・編集可）</div>
-      <div class="field"><textarea id="f_summary" placeholder="AIがQ1・Q2・Q4・Q5・Q6・備考の内容から自動で要約します"></textarea></div>
-      <button class="btn btn-outline" type="button" onclick="regenSummary()">🔄 AIまとめを作成／更新する</button>
+      <div class="sec-title">🧾 内容まとめ（API消費0・自動生成）</div>
+      <div class="field"><textarea id="f_summary" placeholder="「内容まとめを作成する」を押すと記載内容が整理表示されます"></textarea></div>
+      <button class="btn btn-outline" type="button" onclick="generateLocalSummary()">⚡ 内容まとめを作成／更新する</button>
     </div>
 
     <button class="btn btn-green" id="submitBtn" onclick="submitData()">📊 スプレッドシートに送信</button>
@@ -239,14 +259,11 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
 <script>
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbx5jh0o7YQ631nrO-oD1R5VtoMjbH3w2C7DDuCMMJ5G4gx4on0jYOFwzrLDg55rm81S/exec';
 const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-// ★完全にGoogle無料プランで現役稼働している最新モデル「gemini-2.5-flash」のみに固定★
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
 function getKey() { return localStorage.getItem('xef_gemini') || ''; }
 let imgB64 = null, imgMime = 'image/jpeg';
 
-// ── ファイル選択（無料枠エラーを完全に回避する安全高精度リサイズ） ──────────────────
 function onFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -255,7 +272,6 @@ function onFile(input) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      // 無料枠を1発で突破しない「安全・最軽量サイズ（横幅最大1200px）」に自動リサイズ
       const MAX = 1200;
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
@@ -267,7 +283,6 @@ function onFile(input) {
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, w, h);
 
-      // 画質をやや落としてデータサイズを徹底削減（これで無料プランのリミットエラーを完全回避）
       const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
       imgB64 = dataUrl.split(',')[1];
       imgMime = 'image/jpeg';
@@ -278,7 +293,6 @@ function onFile(input) {
       document.getElementById('analyzeBtn').disabled = false;
       document.getElementById('errorActions').style.display = 'none';
 
-      // 画像選択の瞬間にフォームを即表示（待つ間の手動入力を完全に両立）
       document.getElementById('resultArea').style.display  = 'block';
       document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">⏱️ <strong>AI読み取り準備完了</strong><br>「AIで全項目を読み取る」を押すと最新の高速AIで解析が始まります。待つ間に手動入力も可能です。</div>`;
 
@@ -308,7 +322,6 @@ function doReset() {
 
 function clearFields() {
   ['f_company','f_department','f_name','f_phone','f_email',
-   'f_exhibition','f_date','f_staff',
    'f_q1_other','f_q2_other','f_q3_other','f_q4_other',
    'f_q5_other','f_q6_visit_time','f_memo','f_summary'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
@@ -322,25 +335,16 @@ function showSt(type, msg) {
 }
 function hideSt() { document.getElementById('status').className = 'status'; }
 
-// ── ランク判定 ─────────────────────────────────────
-// Q1=興味サービス選択有無 / Q2=スケジュール急ぎ度 / Q5=課題 / Q6=工場見学希望 を使用
-function calcRank(d) {
-  const q1 = d.q1 || '', q2 = d.q2 || '', q5 = d.q5 || '', q6 = d.q6 || '';
-  const hasInterest = q1.trim().length > 0;
-  const urgent = /大至急|3ヶ月/.test(q2);
-  const mid    = /6ヶ月|1年|未定/.test(q2);
-  const issue  = q5.length > 0 && !q5.includes('課題なし');
-  const visit  = /ぜひ見学したい/.test(q6);
-  if (hasInterest && urgent)                 return 'A';
-  if ((hasInterest && mid) || issue || visit) return 'B';
-  return 'C';
-}
 const RINFO = {
-  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'興味サービスあり・スケジュールが急ぎ' },
-  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'中長期案件・課題・見学ニーズあり' },
-  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'興味薄・情報収集のみ' },
+  A:{ cls:'ra', label:'Aランク 今すぐ対応',   desc:'案件化の可能性が高く、優先度最高です' },
+  B:{ cls:'rb', label:'Bランク 継続フォロー', desc:'見込みあり。定期連絡・情報提供を実施します' },
+  C:{ cls:'rc', label:'Cランク 情報提供のみ', desc:'情報収集中心。メルマガ等でフォローします' },
 };
 function renderRank(r) {
+  if (!r || !RINFO[r]) {
+    document.getElementById('rankDisplay').innerHTML = '';
+    return;
+  }
   const i = RINFO[r];
   document.getElementById('rankDisplay').innerHTML = `
     <div class="rank-box ${i.cls}">
@@ -349,7 +353,11 @@ function renderRank(r) {
     </div>`;
 }
 
-// ── Gemini呼び出し（最新のgemini-2.5-flash専用に固定・高速化） ─────────────────────
+function onRankChange() {
+  const ranks = getCheckedValues('f_rank');
+  renderRank(ranks[0] || '');
+}
+
 async function callGemini(prompt) {
   const key = getKey();
   if (!key) { openCfg(); throw new Error('APIキーが未設定です'); }
@@ -383,68 +391,43 @@ async function callGemini(prompt) {
   return raw.replace(/```[a-z]*\n?|```/g, '').trim();
 }
 
-// ── テキストのみでGeminiを呼ぶ（AIまとめ生成専用） ─────────────────
-async function callGeminiText(prompt) {
-  const key = getKey();
-  if (!key) { openCfg(); throw new Error('APIキーが未設定です'); }
-
-  const res = await fetch(`${GEMINI_API}/${GEMINI_MODEL}:generateContent?key=${key}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [ { text: prompt } ] }],
-      generationConfig: { temperature: 0.3 }
-    })
-  });
-
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    throw new Error(e?.error?.message || `エラー(${res.status})`);
-  }
-
-  const json = await res.json();
-  const raw  = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return raw.replace(/```[a-z]*\n?|```/g, '').trim();
-}
-
-// ── AIまとめ生成：Q1・Q2・Q4・Q5・Q6・備考の内容だけを渡して要約させる ──────
-function buildSummaryPrompt(d) {
+function generateLocalSummary() {
+  const d = collect();
   const lines = [];
-  const q1 = [d.q1, d.q1_other].filter(Boolean).join('、');
-  const q2 = [d.q2, d.q2_other].filter(Boolean).join('、');
-  const q4 = [d.q4, d.q4_other].filter(Boolean).join('、');
-  const q5 = [d.q5, d.q5_other].filter(Boolean).join('、');
-  const q6 = [d.q6, d.q6_visit_time].filter(Boolean).join('、');
-  if (q1) lines.push(`興味のあるサービス: ${q1}`);
-  if (q2) lines.push(`スケジュール: ${q2}`);
-  if (q4) lines.push(`使用材質: ${q4}`);
-  if (q5) lines.push(`現在の課題: ${q5}`);
-  if (q6) lines.push(`工場見学: ${q6}`);
-  if (d.memo) lines.push(`備考: ${d.memo}`);
-  if (lines.length === 0) return null;
-  return `以下は展示会での来場者ヒアリング内容です。営業担当が読んですぐ状況を把握できるよう、日本語で2〜3文の要約を作成してください。
-【ルール】
-・書かれている内容だけを使い、書かれていないことは付け足さない
-・敬体（です・ます調）で自然な文章にする
-・説明文や前置きは不要。要約本文のみを返す
 
-【ヒアリング内容】
-${lines.join('\n')}`;
-}
-
-async function generateSummary(d) {
-  const prompt = buildSummaryPrompt(d);
-  if (!prompt) { document.getElementById('f_summary').value = ''; return; }
-  try {
-    const text = await callGeminiText(prompt);
-    document.getElementById('f_summary').value = text;
-  } catch (err) {
-    document.getElementById('f_summary').value = '';
-    console.error('AIまとめ生成エラー:', err.message);
+  if (d.company || d.name) {
+    lines.push(`【顧客】${d.company} ${d.name}様`.trim());
   }
+  if (d.date || d.staff || d.rank) {
+    lines.push(`【基本】日付:${d.date || '-'} / 対応者:${d.staff || '-'} / ランク:${d.rank || '-'}`);
+  }
+  
+  const q1 = [d.q1, d.q1_other].filter(Boolean).join(' / ');
+  if (q1) lines.push(`・案件状況: ${q1}`);
+
+  const q2 = [d.q2, d.q2_other].filter(Boolean).join(' / ');
+  if (q2) lines.push(`・時期: ${q2}`);
+
+  const q3 = [d.q3, d.q3_other].filter(Boolean).join(' / ');
+  if (q3) lines.push(`・ロット: ${q3}`);
+
+  const q4 = [d.q4, d.q4_other].filter(Boolean).join(' / ');
+  if (q4) lines.push(`・材質: ${q4}`);
+
+  const q5 = [d.q5, d.q5_other].filter(Boolean).join(' / ');
+  if (q5) lines.push(`・課題: ${q5}`);
+
+  const q6 = [d.q6, d.q6_visit_time].filter(Boolean).join(' / ');
+  if (q6) lines.push(`・工場見学: ${q6}`);
+
+  if (d.memo) lines.push(`・メモ: ${d.memo}`);
+
+  const summaryText = lines.length > 0 ? lines.join('\n') : '※記入項目がありません';
+  document.getElementById('f_summary').value = summaryText;
+  showSt('success', '⚡ 内容まとめを生成しました（API消費なし）');
+  setTimeout(hideSt, 2000);
 }
 
-// ── 全項目読み取り＋AIまとめ生成 ──────────────────────────────
 async function analyze() {
   if (!imgB64) return;
   document.getElementById('analyzeBtn').disabled = true;
@@ -459,9 +442,10 @@ async function analyze() {
 ・左上に名刺がある場合のみ名刺情報を読み取る
 ・白紙・未記入は全項目空文字（配列は空配列）
 ・推測・補完は絶対禁止
-・Q1〜Q6は複数選択可のため、チェックされた選択肢をすべて配列で返す
+・選択肢は配列形式で返す
 ・JSONのみ返す（説明文不要）
-{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"","date":"","staff":"","exhibition":"",
+{"card_company":"","card_department":"","card_name":"","card_phone":"","card_email":"",
+"date":[],"staff":[],"rank":[],
 "q1":[],"q1_other":"",
 "q2":[],"q2_other":"",
 "q3":[],"q3_other":"",
@@ -474,14 +458,11 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
 
-    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映（切り替え）しますか？\n（『キャンセル』を押すと、今入力している内容が残ります）")) {
+    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映しますか？")) {
       fill(data);
-      const rank = calcRank(collect());
-      renderRank(rank);
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>内容を修正できます</strong><br>チェックはタップで変更、テキスト欄・AIまとめも編集できます。</div>`;
-
-      showSt('loading', 'AIまとめを作成中...');
-      await generateSummary(collect());
+      onRankChange();
+      generateLocalSummary();
+      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>内容を修正できます</strong><br>チェックはタップで変更、テキスト欄も自由に変更できます。</div>`;
     } else {
       document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
     }
@@ -496,7 +477,6 @@ async function analyze() {
   }
 }
 
-// ── 名刺だけ読み取る ─────────────────────────────
 async function readCardOnly() {
   if (!imgB64) return;
   document.getElementById('errorActions').style.display = 'none';
@@ -515,9 +495,8 @@ async function readCardOnly() {
       document.getElementById('f_name').value       = data.card_name       || '';
       document.getElementById('f_phone').value      = data.card_phone      || '';
       document.getElementById('f_email').value      = data.card_email      || '';
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>Q1〜Q6は下のボタンをタップして手動で入力してください。</div>`;
+      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>項目は下のボタンをタップして手動で選択してください。</div>`;
     }
-    document.getElementById('rankDisplay').innerHTML = '';
     showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
   } catch (err) {
     showSt('error', 'エラー: ' + err.message);
@@ -525,7 +504,6 @@ async function readCardOnly() {
   }
 }
 
-// ── 手動入力モード ────────────────────────────────
 function openManual() {
   document.getElementById('rankDisplay').innerHTML = '';
   document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">✏️ <strong>手動入力モード</strong><br>各項目をタップして入力し、スプレッドシートに送信してください。</div>`;
@@ -533,7 +511,6 @@ function openManual() {
   hideSt();
 }
 
-// ── チェックボックス（複数選択）ヘルパー ───────────────────
 function getCheckedValues(name) {
   return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(el => el.value);
 }
@@ -544,16 +521,17 @@ function setCheckedValues(name, values) {
   });
 }
 
-// ── フィールド ─────────────────────────────────────
 function fill(d) {
-  document.getElementById('f_company').value       = d.card_company    || '';
-  document.getElementById('f_department').value    = d.card_department || '';
-  document.getElementById('f_name').value          = d.card_name       || '';
-  document.getElementById('f_phone').value         = d.card_phone      || '';
-  document.getElementById('f_email').value         = d.card_email      || '';
-  document.getElementById('f_exhibition').value    = d.exhibition      || '';
-  document.getElementById('f_date').value          = d.date            || '';
-  document.getElementById('f_staff').value         = d.staff           || '';
+  document.getElementById('f_company').value        = d.card_company    || '';
+  document.getElementById('f_department').value     = d.card_department || '';
+  document.getElementById('f_name').value           = d.card_name       || '';
+  document.getElementById('f_phone').value          = d.card_phone      || '';
+  document.getElementById('f_email').value          = d.card_email      || '';
+  
+  setCheckedValues('f_date', d.date);
+  setCheckedValues('f_staff', d.staff);
+  setCheckedValues('f_rank', d.rank);
+
   document.getElementById('f_q1_other').value      = d.q1_other        || '';
   document.getElementById('f_q2_other').value      = d.q2_other        || '';
   document.getElementById('f_q3_other').value      = d.q3_other        || '';
@@ -561,51 +539,46 @@ function fill(d) {
   document.getElementById('f_q5_other').value      = d.q5_other        || '';
   document.getElementById('f_q6_visit_time').value = d.q6_visit_time   || '';
   document.getElementById('f_memo').value          = d.memo            || '';
-  document.getElementById('f_summary').value       = d.summary         || '';
+  
   ['q1','q2','q3','q4','q5','q6'].forEach(key => setCheckedValues(key, d[key]));
 }
 
+// ── ★指定された並び順でデータを集約（日付 → 対応者 → ランク）★ ──
 function collect() {
   return {
-    card_company:    document.getElementById('f_company').value.trim(),
-    card_department: document.getElementById('f_department').value.trim(),
-    card_name:       document.getElementById('f_name').value.trim(),
-    card_phone:      document.getElementById('f_phone').value.trim(),
-    card_email:      document.getElementById('f_email').value.trim(),
-    exhibition:      document.getElementById('f_exhibition').value.trim(),
-    date:            document.getElementById('f_date').value.trim(),
-    staff:           document.getElementById('f_staff').value.trim(),
-    q1: getCheckedValues('q1').join('、'), q1_other: document.getElementById('f_q1_other').value.trim(),
-    q2: getCheckedValues('q2').join('、'), q2_other: document.getElementById('f_q2_other').value.trim(),
-    q3: getCheckedValues('q3').join('、'), q3_other: document.getElementById('f_q3_other').value.trim(),
-    q4: getCheckedValues('q4').join('、'), q4_other: document.getElementById('f_q4_other').value.trim(),
-    q5: getCheckedValues('q5').join('、'), q5_other: document.getElementById('f_q5_other').value.trim(),
-    q6: getCheckedValues('q6').join('、'), q6_visit_time: document.getElementById('f_q6_visit_time').value.trim(),
-    memo: document.getElementById('f_memo').value.trim(),
-    summary: document.getElementById('f_summary').value.trim(),
+    _sentAt:    new Date().toLocaleString('ja-JP'),                          // 1. タイムスタンプ
+    date:       getCheckedValues('f_date').join('、'),                      // 2. 日付
+    staff:      getCheckedValues('f_staff').join('、'),                     // 3. 対応者
+    rank:       getCheckedValues('f_rank').join('、'),                      // 4. ランク
+    company:    document.getElementById('f_company').value.trim(),           // 5. 会社名
+    department: document.getElementById('f_department').value.trim(),        // 6. 部署
+    name:       document.getElementById('f_name').value.trim(),              // 7. 氏名
+    summary:    document.getElementById('f_summary').value.trim(),           // 8. AIまとめ（内容まとめ）
+    phone:      document.getElementById('f_phone').value.trim(),             // 9. 電話
+    email:      document.getElementById('f_email').value.trim(),             // 10. メール
+    exhibition: '',                                                          // 11. 展示会名（空欄）
+    q1:         getCheckedValues('q1').join('、'),                           // 12. Q1_興味のあるサービス
+    q1_other:   document.getElementById('f_q1_other').value.trim(),          // 13. Q1_その他
+    q2:         getCheckedValues('q2').join('、'),                           // 14. Q2_スケジュール
+    q2_other:   document.getElementById('f_q2_other').value.trim(),          // 15. Q2_その他
+    q3:         getCheckedValues('q3').join('、'),                           // 16. Q3_ロット規模
+    q3_other:   document.getElementById('f_q3_other').value.trim(),          // 17. Q3_その他
+    q4:         getCheckedValues('q4').join('、'),                           // 18. Q4_使用材質
+    q4_other:   document.getElementById('f_q4_other').value.trim(),          // 19. Q4_その他
+    q5:         getCheckedValues('q5').join('、'),                           // 20. Q5_現在の課題
+    q5_other:   document.getElementById('f_q5_other').value.trim(),          // 21. Q5_その他
+    q6:         getCheckedValues('q6').join('、'),                           // 22. Q6_工場見学
+    q6_visit_time: document.getElementById('f_q6_visit_time').value.trim(), // 23. Q6_希望時期
+    memo:       document.getElementById('f_memo').value.trim(),              // 24. 備考
   };
 }
 
-// ── AIまとめを手動で作成／更新（手動入力モードや修正後にも使える） ─────
-async function regenSummary() {
-  showSt('loading', 'AIまとめを作成中...');
-  try {
-    await generateSummary(collect());
-    showSt('success', '✅ AIまとめを更新しました');
-  } catch (err) {
-    showSt('error', 'AIまとめの作成に失敗しました: ' + err.message);
-  }
-}
-
-// ── 送信 ──────────────────────────────────────────
 async function submitData() {
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   showSt('loading', 'スプレッドシートに送信中...');
   const payload = collect();
-  payload._rank   = calcRank(payload);
-  payload._sentAt = new Date().toLocaleString('ja-JP');
-  renderRank(payload._rank);
+  
   try {
     await fetch(GAS_URL, {
       method: 'POST', mode: 'no-cors',
@@ -620,7 +593,6 @@ async function submitData() {
   }
 }
 
-// ── 設定 ──────────────────────────────────────────
 function openCfg() {
   const k = getKey();
   document.getElementById('s_key').value = k;
