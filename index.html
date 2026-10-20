@@ -121,7 +121,7 @@ body { font-family: -apple-system,'Hiragino Sans','Yu Gothic',sans-serif; backgr
     <div id="rankDisplay"></div>
     <div id="modeBanner"></div>
 
-    <!-- 基本情報（日付 → 対応者 → ランク の順にフォーム配置） -->
+    <!-- 基本情報 -->
     <div class="card">
       <div class="sec-title">📋 基本情報</div>
       <div class="field"><label>日付</label>
@@ -439,7 +439,7 @@ async function analyze() {
   const prompt = `あなたは展示会ヒアリングシートのOCR専用AIです。
 【絶対ルール】
 ・画像から読み取れる情報をキーごとに抽出してください。
-・名刺が貼付されている場合は、会社名、部署名、氏名、電話番号、メールアドレスを正確に読み取ってください。
+・名刺が貼付されている場合は、会社名(company)、部署名(department)、氏名(name)、電話番号(phone)、メールアドレス(email)を正確に読み取ってください。
 ・推測・補完は厳禁です。
 ・JSONフォーマットのみを返してください。
 {"company":"","department":"","name":"","phone":"","email":"",
@@ -456,14 +456,11 @@ async function analyze() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
 
-    if (confirm("AIの読み取りが完了しました。解析した内容をフォームに反映しますか？")) {
-      fill(data);
-      onRankChange();
-      generateLocalSummary();
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>内容を修正できます</strong><br>チェックはタップで変更、テキスト欄も自由に変更できます。</div>`;
-    } else {
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>手動入力を継続中</strong><br>AIの自動反映をスキップしました。</div>`;
-    }
+    // AI解析完了後、自動的に入力欄にセット（確認を挟まず直感セット可能）
+    fill(data);
+    onRankChange();
+    generateLocalSummary();
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-yellow">✏️ <strong>AIの解析結果を反映しました</strong><br>タップで修正や追加入力が可能です。</div>`;
 
     showSt('success', '✅ 読み取り完了！内容を確認して送信してください');
   } catch (err) {
@@ -487,14 +484,13 @@ async function readCardOnly() {
     const clean = await callGemini(prompt);
     const data  = JSON.parse(clean);
 
-    if (confirm("名刺の解析が完了しました。名刺情報欄をAIの内容に切り替えますか？")) {
-      document.getElementById('f_company').value    = data.company    || '';
-      document.getElementById('f_department').value = data.department || '';
-      document.getElementById('f_name').value       = data.name       || '';
-      document.getElementById('f_phone').value      = data.phone      || '';
-      document.getElementById('f_email').value      = data.email      || '';
-      document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>項目は下のボタンをタップして手動で選択してください。</div>`;
-    }
+    document.getElementById('f_company').value    = data.company    || data.card_company    || '';
+    document.getElementById('f_department').value = data.department || data.card_department || '';
+    document.getElementById('f_name').value       = data.name       || data.card_name       || '';
+    document.getElementById('f_phone').value      = data.phone      || data.card_phone      || '';
+    document.getElementById('f_email').value      = data.email      || data.card_email      || '';
+    document.getElementById('modeBanner').innerHTML = `<div class="banner banner-red">🪪 <strong>名刺情報を読み取りました</strong><br>項目は下のボタンをタップして手動で選択してください。</div>`;
+
     showSt('success', '✅ 名刺読み取り完了！残りは手動で入力してください');
   } catch (err) {
     showSt('error', 'エラー: ' + err.message);
@@ -519,6 +515,7 @@ function setCheckedValues(name, values) {
   });
 }
 
+// AI解析データを入れる処理（全キー表記揺れ吸収）
 function fill(d) {
   setCheckedValues('f_date', d.date);
   setCheckedValues('f_staff', d.staff);
@@ -541,7 +538,7 @@ function fill(d) {
   ['q1','q2','q3','q4','q5','q6'].forEach(key => setCheckedValues(key, d[key]));
 }
 
-// ── ★指定順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名...）で送信★ ──
+// ── ★送信データの並び順（タイムスタンプ ➔ 日付 ➔ 対応者 ➔ ランク ➔ 会社名...）★ ──
 function collect() {
   return {
     _sentAt:    new Date().toLocaleString('ja-JP'),                          //  1. タイムスタンプ (A列)
